@@ -5,6 +5,7 @@ hostnamectl set-hostname ${hostname}
 
 LOG="/var/log/bootstrap.log" 
 echo "Bootstrapping ${role}: ${hostname}" > "$LOG" 
+
 if [ "${role}" = "bastion-host" ]; then 
 echo "Running bastion-host setup..." >> "$LOG" 
 
@@ -16,6 +17,7 @@ echo "Ansible installation complete." >> "$LOG"
 
 export PATH=$HOME/.local/bin:$PATH
  
+echo "Ansible installation complete." >> "$LOG" 
 ansible --version >> "$LOG" 2>&1 
 fi
 

@@ -42,7 +42,7 @@
       content: |
         overlay
         br_netfilter
-  mode: '0644'
+      mode: '0644'
   when: "'k8s_cluster' in group_names"
 
 - name: Set sysctl parameters

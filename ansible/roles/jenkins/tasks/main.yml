@@ -41,6 +41,7 @@
 - name: Install Docker for Jenkins
   include_role:
     name: docker
+    state: present
 
 - name: Add Jenkins user to docker group
   user:

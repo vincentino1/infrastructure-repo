@@ -15,7 +15,7 @@
 
 - name: Update APT package index again
   apt:
-  update_cache: true
+    update_cache: true
 
 - name: Update apt cache
   apt:
