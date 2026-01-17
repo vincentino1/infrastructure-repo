@@ -99,7 +99,7 @@ module "k8s_master_sg" {
     {
       rule        = "all-all"
       description = "Internal VPC traffic only"
-      cidr_blocks = module.vpc.vpc_cidr_block
+      cidr_blocks = "0.0.0.0/0"
     }
   ]
 
@@ -124,7 +124,16 @@ module "k8s_worker_sg" {
       protocol                 = "tcp"
       description              = "Kubelet API from masters"
       source_security_group_id = module.k8s_master_sg.security_group_id
+    },
+
+    {
+    from_port                = 22
+    to_port                  = 22
+    protocol                 = "tcp"
+    description              = "SSH from bastion"
+    source_security_group_id = module.bastion_sg.security_group_id
     }
+
   ]
 
   ingress_with_cidr_blocks = [
@@ -141,7 +150,7 @@ module "k8s_worker_sg" {
     {
       rule        = "all-all"
       description = "Internal VPC traffic only"
-      cidr_blocks = module.vpc.vpc_cidr_block
+      cidr_blocks = "0.0.0.0/0"
     }
   ]
 
@@ -150,7 +159,7 @@ module "k8s_worker_sg" {
   })
 }
 
-# ---------------------- TOOLS SG ----------------------
+# ---------------------- Nexus ----------------------
 module "tools_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.3"
@@ -160,13 +169,7 @@ module "tools_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
-    {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      description = "Jenkins UI"
-      cidr_blocks = var.vpc_cidr
-    },
+
     {
       from_port   = 8081
       to_port     = 8081
@@ -193,9 +196,61 @@ module "tools_sg" {
     }
   ]
 
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      description = "Internal VPC traffic only"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
   tags = merge(var.tags, {
     Name = "${var.environment}-ci-cd-tools-sg"
   })
+}
+
+#---------------------- Jenkins SG ----------------------
+module "jenkins_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 5.3"
+
+  name        = "${var.environment}-jenkins-sg"
+  description = "Security group for Jenkins server"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_with_cidr_blocks = [
+
+    {
+      from_port   = 8080
+      to_port     = 8080
+      protocol    = "tcp"
+      description = "Jenkins Web UI"
+      cidr_blocks = var.vpc_cidr
+    }
+  ]
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = 22
+      to_port                  = 22
+      protocol                 = "tcp"
+      description              = "SSH from bastion"
+      source_security_group_id = module.bastion_sg.security_group_id
+    }
+  ]
+
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      description = "Internal VPC traffic only"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ] 
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-jenkins-sg"
+  })
+
 }
 
 # ---------------------- DB SG ----------------------
@@ -214,9 +269,27 @@ module "db_sg" {
       protocol                 = "tcp"
       description              = "DB access from app layer"
       source_security_group_id = module.k8s_worker_sg.security_group_id
+    },
+
+    {
+    from_port                = 22
+    to_port                  = 22
+    protocol                 = "tcp"
+    description              = "SSH from bastion"
+    source_security_group_id = module.bastion_sg.security_group_id
     }
+
   ]
 
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      description = "Internal VPC traffic only"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+    
+  
   tags = merge(var.tags, {
     Name = "${var.environment}-postgresql-sg"
   })
@@ -327,7 +400,7 @@ module "jenkins-server" {
   instance_type          = var.jenkins_instance_type
   ami                    = data.aws_ami.ubuntu.id 
   key_name               = var.ssh_key_name        
-  vpc_security_group_ids = [module.tools_sg.security_group_id]
+  vpc_security_group_ids = [module.jenkins_sg.security_group_id]
   monitoring             = true
   subnet_id              = module.vpc.private_subnets[0]
   user_data              = data.template_file.tools_userdata["jenkins"].rendered
