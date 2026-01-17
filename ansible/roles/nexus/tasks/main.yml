@@ -12,7 +12,7 @@
 
 - name: Download Nexus
   get_url:
-    url: https://download.sonatype.com/nexus/3/nexus-3.59.1-01-unix.tar.gz
+    url: https://download.sonatype.com/nexus/3/nexus-unix-x86-64-3.79.0-09.tar.gz
     dest: /tmp/nexus.tar.gz
 
 - name: Extract Nexus
