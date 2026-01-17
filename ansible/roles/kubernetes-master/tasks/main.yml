@@ -1,30 +1,30 @@
----
-
-- name: Create APT keyrings directory
+- name: Ensure keyrings directory exists
   file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
 
-- name: Download Kubernetes GPG key
+- name: Download Kubernetes GPG key (v1.32)
   get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
-    dest: /tmp/kubernetes-apt-keyring.gpg
+    url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+    dest: /tmp/kubernetes-release.key
+    mode: '0644'
 
-- name: Save Kubernetes GPG key
-  command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-apt-keyring.gpg
-  changed_when: false
+- name: Convert Kubernetes GPG key to keyring format
+  command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
-- name: Add Kubernetes repository to APT sources
+- name: Add Kubernetes repository to APT sources (v1.32)
   copy:
     content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /
     dest: /etc/apt/sources.list.d/kubernetes.list
     mode: '0644'
 
 - name: Update APT package index for Kubernetes
   apt:
-   update_cache: true
+    update_cache: true
 
 - name: Install Kubernetes packages
   apt:
@@ -35,7 +35,7 @@
     state: present
     update_cache: yes
 
-- name: Hold Kubernetes packages 
+- name: Hold Kubernetes packages
   dpkg_selections:
     name: "{{ item }}"
     selection: hold
@@ -45,13 +45,13 @@
     - kubectl
 
 - name: Initialize Kubernetes cluster
-  command: > 
-    kubeadm init 
-    --pod-network-cidr={{ k8s_pod_network_cidr }} 
-    --apiserver-advertise-address={{ ansible_host }} 
-    --control-plane-endpoint={{ k8s_api_endpoint }} 
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ k8s_pod_network_cidr }}
+    --apiserver-advertise-address={{ ansible_host }}
+    --control-plane-endpoint={{ k8s_api_endpoint }}
     --upload-certs
-  register: kubeadm_init  
+  register: kubeadm_init
   retries: 2
   delay: 10
   until: kubeadm_init.rc == 0
@@ -82,7 +82,7 @@
   environment:
     KUBECONFIG: /home/{{ k8s_user }}/.kube/config
 
-- name: check if node already part of the cluster
+- name: Check if node already part of the cluster
   command: kubectl get nodes --no-headers
   register: kubectl_get_nodes
   failed_when: false
@@ -91,12 +91,10 @@
   environment:
     KUBECONFIG: /home/{{ k8s_user }}/.kube/config
 
-- name: skip join if node already part of the cluster
+- name: Skip join if node already part of the cluster
   debug:
     msg: "Node {{ inventory_hostname }} is already part of the cluster. Skipping join."
   when: inventory_hostname in kubectl_get_nodes.stdout
-
-
 
 - name: Generate join command on master
   command: kubeadm token create --print-join-command --ttl 24h
@@ -116,6 +114,3 @@
     src: /tmp/k8s_join_command.sh
     dest: /tmp/k8s_join_command.sh
     flat: yes
-
-
-
