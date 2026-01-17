@@ -29,6 +29,13 @@
     group: nexus
     recurse: yes
 
+- name: Fix Nexus data directory permissions
+  file:
+    path: /opt/sonatype-work
+    owner: nexus
+    group: nexus
+    recurse: yes
+
 - name: Create symlink
   file:
     src: /opt/nexus-3.79.0-09
@@ -47,8 +54,8 @@
       [Service]
       Type=forking
       LimitNOFILE=65536
-      ExecStart=/opt/nexus/bin/nexus start
-      ExecStop=/opt/nexus/bin/nexus stop
+      ExecStart=/bin/bash /opt/nexus/bin/nexus start
+      ExecStop=/bin/bash /opt/nexus/bin/nexus stop
       User=nexus
       WorkingDirectory=/opt/nexus
       Restart=on-abort
