@@ -65,12 +65,21 @@
     dest: /usr/local/bin/kubectl
     mode: '0755'
 
+- name: Create Jenkins .kube directory
+  file:
+    path: /var/lib/jenkins/.kube
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0700'
+
 - name: Fetch admin.conf from Kubernetes master
   fetch:
-    src: /etc/kubernetes/admin.conf   # path on k8s master
-    dest: /tmp/admin.conf              # path on Ansible controller
-    flat: yes
+    src: /etc/kubernetes/admin.conf       # path on k8s master
+    dest: /tmp/admin.conf                  # path on Ansible controller
+    flat: yes                              # saves directly as /tmp/admin.conf
   delegate_to: k8s-master-1
+  run_once: true  
 
 - name: Copy kubeconfig to Jenkins
   copy:
