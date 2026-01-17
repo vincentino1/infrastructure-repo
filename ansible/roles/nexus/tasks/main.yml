@@ -37,7 +37,7 @@
 
 - name: Configure Nexus to run as nexus user
   lineinfile:
-    path: /opt/nexus/bin/nexus.rc
+    path: /opt/nexus-3.79.0-09/bin/nexus.rc
     regexp: '^#run_as_user=""'
     line: 'run_as_user="nexus"'
 
