@@ -1,7 +1,8 @@
 - name: Install Java for Nexus
   apt:
-    name: openjdk-8-jdk
+    name: openjdk-17-jdk
     state: present
+    update_cache: yes
 
 - name: Create nexus user
   user:
@@ -20,12 +21,17 @@
     src: /tmp/nexus.tar.gz
     dest: /opt
     remote_src: yes
+
+- name: Fix Nexus directory permissions 
+  file: 
+    path: /opt/nexus-3.79.0-09
     owner: nexus
     group: nexus
+    recurse: yes
 
 - name: Create symlink
   file:
-    src: /opt/nexus-3.xx.x-xx  # Adjust version
+    src: /opt/nexus-3.79.0-09 # Adjust version
     dest: /opt/nexus
     state: link
 
