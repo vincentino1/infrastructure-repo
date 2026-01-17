@@ -22,8 +22,8 @@
     dest: /opt
     remote_src: yes
 
-- name: Fix Nexus directory permissions 
-  file: 
+- name: Fix Nexus directory permissions
+  file:
     path: /opt/nexus-3.79.0-09
     owner: nexus
     group: nexus
@@ -31,15 +31,10 @@
 
 - name: Create symlink
   file:
-    src: /opt/nexus-3.79.0-09 # Adjust version
+    src: /opt/nexus-3.79.0-09
     dest: /opt/nexus
     state: link
-
-- name: Configure Nexus to run as nexus user
-  lineinfile:
-    path: /opt/nexus-3.79.0-09/bin/nexus.rc
-    regexp: '^#run_as_user=""'
-    line: 'run_as_user="nexus"'
+    force: yes
 
 - name: Create Nexus systemd service
   copy:
@@ -55,6 +50,7 @@
       ExecStart=/opt/nexus/bin/nexus start
       ExecStop=/opt/nexus/bin/nexus stop
       User=nexus
+      WorkingDirectory=/opt/nexus
       Restart=on-abort
 
       [Install]
@@ -73,13 +69,15 @@
     delay: 30
     timeout: 300
 
+- name: Wait for admin password file
+  wait_for:
+    path: /opt/sonatype-work/nexus3/admin.password
+    timeout: 300
+
 - name: Get Nexus admin password
   command: cat /opt/sonatype-work/nexus3/admin.password
   register: nexus_password
-  ignore_errors: yes
 
 - name: Display Nexus password
   debug:
     msg: "Nexus initial password: {{ nexus_password.stdout }}"
-    when: nexus_password.stdout is defined
-  
