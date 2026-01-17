@@ -7,9 +7,15 @@ LOG="/var/log/bootstrap.log"
 echo "Bootstrapping ${role}: ${hostname}" > "$LOG" 
 if [ "${role}" = "bastion-host" ]; then 
 echo "Running bastion-host setup..." >> "$LOG" 
-echo "Installing Ansible (via apt)..." >> "$LOG" 
-apt install -y ansible-core >> "$LOG" 2>&1 
-echo "Ansible installation complete." >> "$LOG" 
+
+echo "Installing Ansible (via pip)..." >> "$LOG" 
+apt install -y python3-pip >> "$LOG" 2>&1
+
+python3 -m pip install --user --upgrade ansible >> "$LOG" 2>&1
+echo "Ansible installation complete." >> "$LOG"
+
+export PATH=$HOME/.local/bin:$PATH
+ 
 ansible --version >> "$LOG" 2>&1 
 fi
 

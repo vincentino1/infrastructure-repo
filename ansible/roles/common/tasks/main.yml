@@ -36,6 +36,15 @@
     - br_netfilter
   when: "'k8s_cluster' in group_names"
 
+- name: Ensure kernel modules are loaded on boot
+  copy:
+      dest: /etc/modules-load.d/k8s.conf
+      content: |
+        overlay
+        br_netfilter
+  mode: '0644'
+  when: "'k8s_cluster' in group_names"
+
 - name: Set sysctl parameters
   sysctl:
     name: "{{ item.name }}"
