@@ -1,0 +1,49 @@
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install common packages
+  apt:
+    name:
+      - curl
+      - wget
+      - vim
+      - git
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Disable swap
+  shell: swapoff -a
+  when: "'k8s_cluster' in group_names"
+
+- name: Remove swap from fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^.*swap.*$'
+    state: absent
+  when: "'k8s_cluster' in group_names"
+
+- name: Load kernel modules for Kubernetes
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+  when: "'k8s_cluster' in group_names"
+
+- name: Set sysctl parameters
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+  when: "'k8s_cluster' in group_names"

@@ -1,0 +1,79 @@
+- name: Install Java for Nexus
+  apt:
+    name: openjdk-8-jdk
+    state: present
+
+- name: Create nexus user
+  user:
+    name: nexus
+    system: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: Download Nexus
+  get_url:
+    url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    dest: /tmp/nexus.tar.gz
+
+- name: Extract Nexus
+  unarchive:
+    src: /tmp/nexus.tar.gz
+    dest: /opt
+    remote_src: yes
+    owner: nexus
+    group: nexus
+
+- name: Create symlink
+  file:
+    src: /opt/nexus-3.xx.x-xx  # Adjust version
+    dest: /opt/nexus
+    state: link
+
+- name: Configure Nexus to run as nexus user
+  lineinfile:
+    path: /opt/nexus/bin/nexus.rc
+    regexp: '^#run_as_user=""'
+    line: 'run_as_user="nexus"'
+
+- name: Create Nexus systemd service
+  copy:
+    dest: /etc/systemd/system/nexus.service
+    content: |
+      [Unit]
+      Description=Nexus Repository Manager
+      After=network.target
+
+      [Service]
+      Type=forking
+      LimitNOFILE=65536
+      ExecStart=/opt/nexus/bin/nexus start
+      ExecStop=/opt/nexus/bin/nexus stop
+      User=nexus
+      Restart=on-abort
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Start Nexus
+  systemd:
+    name: nexus
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Wait for Nexus to start
+  wait_for:
+    port: 8081
+    delay: 30
+    timeout: 300
+
+- name: Get Nexus admin password
+  command: cat /opt/sonatype-work/nexus3/admin.password
+  register: nexus_password
+  ignore_errors: yes
+
+- name: Display Nexus password
+  debug:
+    msg: "Nexus initial password: {{ nexus_password.stdout }}"
+    when: nexus_password.stdout is defined
+  

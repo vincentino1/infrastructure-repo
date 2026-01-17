@@ -1,0 +1,113 @@
+---
+
+- name: Create APT keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes GPG key
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+    dest: /etc/apt/keyrings/kubernetes.gpg
+    mode: '0644'
+
+- name: Add Kubernetes AP repository
+  apt_repository:
+    repo: >
+      deb [signed-by=/etc/apt/keyrings/kubernetes.gpg]
+      https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
+    state: present
+    filename: kubernetes
+
+- name: Install Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: Hold Kubernetes packages 
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: Initialize Kubernetes cluster
+  command: > 
+    kubeadm init 
+    --pod-network-cidr={{ k8s_pod_network_cidr }} # Calico default CIDR
+    --apiserver-advertise-address={{ ansible_host }} # Master node IP
+    --control-plane-endpoint={{ k8s_api_endpoint }} # API server endpoint
+    --upload-certs
+  register: kubeadm_init  
+  retries: 2
+  delay: 10
+  until: kubeadm_init.rc == 0
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Create .kube directory for admin user
+  file:
+    path: /home/{{ k8s_user }}/.kube
+    state: directory
+    mode: '0755'
+    owner: "{{ k8s_user }}"
+    group: "{{ k8s_user }}"
+
+- name: Copy admin.conf to user kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ k8s_user }}/.kube/config
+    remote_src: yes
+    owner: "{{ k8s_user }}"
+    group: "{{ k8s_user }}"
+    mode: '0644'
+
+- name: Install Calico CNI
+  become: yes
+  become_user: "{{ k8s_user }}"
+  command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+  environment:
+    KUBECONFIG: /home/{{ k8s_user }}/.kube/config
+
+- name: check if node already part of the cluster
+  command: kubectl get nodes --no-headers
+  register: kubectl_get_nodes
+  failed_when: false
+  changed_when: false
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+  environment:
+    KUBECONFIG: /home/{{ k8s_user }}/.kube/config
+
+- name: skip join if node already part of the cluster
+  debug:
+    msg: "Node {{ inventory_hostname }} is already part of the cluster. Skipping join."
+  when: inventory_hostname in kubectl_get_nodes.stdout
+
+
+
+- name: Generate join command on master
+  command: kubeadm token create --print-join-command --ttl 24h
+  register: join_command
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+
+- name: Save join command to file
+  copy:
+    content: "{{ join_command.stdout }}"
+    dest: /tmp/k8s_join_command.sh
+    mode: '0755'
+
+- name: Fetch join command to local
+  fetch:
+    src: /tmp/k8s_join_command.sh
+    dest: /tmp/k8s_join_command.sh
+    flat: yes
+

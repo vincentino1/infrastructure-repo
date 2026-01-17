@@ -1,0 +1,19 @@
+---
+- name: Configure containerd to use insecure registry
+  blockinfile:
+    path: /etc/containerd/config.toml
+    block: |
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000"]
+        endpoint = ["http://{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000"]
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000".tls]
+        insecure_skip_verify = true
+    
+  vars:
+    nexus_ip: "{{ hostvars[groups['nexus_server'][0]].ansible_host }}"
+  notify: Restart containerd
+
+- name: Join worker to cluster
+  command: /tmp/k8s_join_command.sh
+  args:
+    creates: /etc/kubernetes/kubelet.conf
+  when: inventory_hostname not in kubectl_get_nodes.stdout_lines
