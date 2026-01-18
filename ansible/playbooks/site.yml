@@ -3,7 +3,7 @@
   hosts: k8s_cluster
   become: yes
   roles:
-    - docker
+    - master-worker-conf
 
 - name: Setup Kubernetes master
   hosts: k8s_master
