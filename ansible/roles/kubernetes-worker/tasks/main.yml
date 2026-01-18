@@ -6,10 +6,10 @@
     content: "{{ hostvars[groups['k8s_master'][0]].join_command }}"
     dest: /tmp/k8s_join_command.sh
     mode: '0755'
-  when: inventory_hostname not in kubectl_get_nodes.stdout_lines
+  when: inventory_hostname not in hostvars[groups['k8s_master'][0]].kubectl_get_nodes.stdout_lines
 
 - name: Join worker to cluster
   command: /tmp/k8s_join_command.sh
   args:
     creates: /etc/kubernetes/kubelet.conf
-  when: inventory_hostname not in kubectl_get_nodes.stdout_lines
+  when: inventory_hostname not in hostvars[groups['k8s_master'][0]].kubectl_get_nodes.stdout_lines
