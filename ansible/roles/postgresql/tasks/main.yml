@@ -13,7 +13,9 @@
     enabled: yes
 
 - name: Create database
+  become: yes
   become_user: postgres
+  become_flags: "-n"
   postgresql_db:
     name: ecommerce_db
     state: present
