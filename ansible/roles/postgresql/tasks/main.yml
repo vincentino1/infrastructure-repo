@@ -14,13 +14,12 @@
     enabled: yes
   become: yes
 
-- name: Allow local postgres socket authentication
-  blockinfile:
+- name: Ensure local postgres authentication uses md5
+  lineinfile:
     path: /etc/postgresql/14/main/pg_hba.conf
-    block: |
-      # Allow local socket access for postgres (Ansible automation)
-      local   all   postgres   md5
-    insertafter: BOF
+    regexp: '^local\s+all\s+postgres\s+'
+    line: 'local   all   postgres   md5'
+    state: present
   become: yes
 
 - name: Restart PostgreSQL after auth change
@@ -29,11 +28,19 @@
     state: restarted
   become: yes
 
+- name: Set password for postgres user
+  postgresql_user:
+    name: postgres
+    password: "SecurePostgresPassword123!"
+    login_user: postgres
+    login_unix_socket: /var/run/postgresql
+
 - name: Create database
   postgresql_db:
     name: ecommerce_db
     state: present
     login_user: postgres
+    login_password: "SecurePostgresPassword123!"
     login_unix_socket: /var/run/postgresql
 
 - name: Create database user
@@ -43,18 +50,19 @@
     priv: "ecommerce_db:ALL"
     state: present
     login_user: postgres
+    login_password: "SecurePostgresPassword123!"
     login_unix_socket: /var/run/postgresql
 
 - name: Configure PostgreSQL to listen on all interfaces
   lineinfile:
-    path: /etc/postgresql/15/main/postgresql.conf
+    path: /etc/postgresql/14/main/postgresql.conf
     regexp: "^#?listen_addresses"
     line: "listen_addresses = '*'"
   become: yes
 
 - name: Configure pg_hba.conf for remote access
   blockinfile:
-    path: /etc/postgresql/15/main/pg_hba.conf
+    path: /etc/postgresql/14/main/pg_hba.conf
     block: |
       host    all             all             10.0.10.0/24            md5
       host    all             all             10.0.11.0/24            md5
