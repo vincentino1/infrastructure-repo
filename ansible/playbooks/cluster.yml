@@ -3,7 +3,7 @@
   hosts: k8s_cluster
   become: yes
   roles:
-    - master-worker-conf
+    - docker
 
 - name: Setup Kubernetes master
   hosts: k8s_master
@@ -23,7 +23,9 @@
   roles:
     - containerd-registry
 
-
-
-
+- name: Prepare all nodes for Kubernetes
+  hosts: k8s_cluster
+  become: yes
+  roles:
+    - k8s-cluster-prep
 
