@@ -1,7 +1,7 @@
 ---
 - name: Confirm worker role is executing 
   debug: 
-  msg: "Running join logic on {{ inventory_hostname }}"
+    msg: "Running join logic on {{ inventory_hostname }}"
 
 - name: Check if node already part of the cluster
   command: kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name
