@@ -40,7 +40,7 @@
 
 - name: Install Docker for Jenkins
   include_role:
-    name: master-worker-conf
+    name: docker
 
 - name: Ensure docker group exists
   group:
