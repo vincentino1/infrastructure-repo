@@ -21,7 +21,9 @@
     state: present
 
 - name: Create database user
+  become: yes
   become_user: postgres
+  become_flags: "-n"
   postgresql_user:
     name: ecommerce_user
     password: SecurePassword123!
