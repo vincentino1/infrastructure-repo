@@ -5,36 +5,37 @@
       - postgresql-contrib
       - python3-psycopg2
     state: present
+  become: yes
 
 - name: Start PostgreSQL
   systemd:
     name: postgresql
     state: started
     enabled: yes
+  become: yes
 
 - name: Create database
-  become: yes
-  become_user: postgres
-  become_flags: "-n"
   postgresql_db:
     name: ecommerce_db
     state: present
-
-- name: Create database user
   become: yes
   become_user: postgres
-  become_flags: "-n"
+
+- name: Create database user
   postgresql_user:
     name: ecommerce_user
-    password: SecurePassword123!
+    password: "SecurePassword123!"
     priv: "ecommerce_db:ALL"
     state: present
+  become: yes
+  become_user: postgres
 
 - name: Configure PostgreSQL to listen on all interfaces
   lineinfile:
     path: /etc/postgresql/15/main/postgresql.conf
     regexp: "^#?listen_addresses"
     line: "listen_addresses = '*'"
+  become: yes
 
 - name: Configure pg_hba.conf for remote access
   blockinfile:
@@ -42,8 +43,10 @@
     block: |
       host    all             all             10.0.10.0/24            md5
       host    all             all             10.0.11.0/24            md5
+  become: yes
 
 - name: Restart PostgreSQL
   systemd:
     name: postgresql
     state: restarted
+  become: yes
