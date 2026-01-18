@@ -18,8 +18,8 @@
   postgresql_db:
     name: ecommerce_db
     state: present
-  become: yes
-  become_user: postgres
+    login_user: postgres
+    login_unix_socket: /var/run/postgresql
 
 - name: Create database user
   postgresql_user:
@@ -27,8 +27,8 @@
     password: "SecurePassword123!"
     priv: "ecommerce_db:ALL"
     state: present
-  become: yes
-  become_user: postgres
+    login_user: postgres
+    login_unix_socket: /var/run/postgresql
 
 - name: Configure PostgreSQL to listen on all interfaces
   lineinfile:
