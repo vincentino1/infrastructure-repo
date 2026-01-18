@@ -14,6 +14,21 @@
     enabled: yes
   become: yes
 
+- name: Allow local postgres socket authentication
+  blockinfile:
+    path: /etc/postgresql/15/main/pg_hba.conf
+    block: |
+      # Allow local socket access for postgres (Ansible automation)
+      local   all   postgres   md5
+    insertafter: BOF
+  become: yes
+
+- name: Restart PostgreSQL after auth change
+  systemd:
+    name: postgresql
+    state: restarted
+  become: yes
+
 - name: Create database
   postgresql_db:
     name: ecommerce_db
