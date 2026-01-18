@@ -22,6 +22,12 @@
   roles:
     - kubernetes-worker
 
+- name: Setup containerd registry
+  hosts: k8s_cluster
+  become: yes
+  roles:
+    - containerd-registry
+
 - name: Setup Jenkins
   hosts: jenkins_server
   become: yes

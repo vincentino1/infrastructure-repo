@@ -1,16 +1,31 @@
 ---
-- name: Configure containerd to use insecure registry
-  blockinfile:
-    path: /etc/containerd/config.toml
-    block: |
-      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000"]
-        endpoint = ["http://{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000"]
-      [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ hostvars[groups['nexus_server'][0]].ansible_host }}:5000".tls]
-        insecure_skip_verify = true
-    
-  vars:
-    nexus_ip: "{{ hostvars[groups['nexus_server'][0]].ansible_host }}"
-  notify: Restart containerd
+- name: Check if node already part of the cluster
+  command: kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name
+  register: kubectl_get_nodes
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+  failed_when: false
+  changed_when: false
+  environment:
+    KUBECONFIG: /home/{{ k8s_user }}/.kube/config
+
+- name: Skip join if node already part of the cluster 
+  debug:
+    msg: "Node {{ inventory_hostname }} is already part of the cluster. Skipping join."
+  when: inventory_hostname in kubectl_get_nodes.stdout_lines
+
+- name: Generate join command on master
+  command: kubeadm token create --print-join-command --ttl 24h
+  register: join_command
+  run_once: true
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+  changed_when: false
+
+- name: Copy join command to worker
+  copy:
+    content: "{{ hostvars[groups['k8s_master'][0]].join_command.stdout }}"
+    dest: /tmp/k8s_join_command.sh
+    mode: '0755'
+  when: inventory_hostname not in kubectl_get_nodes.stdout_lines
 
 - name: Join worker to cluster
   command: /tmp/k8s_join_command.sh
