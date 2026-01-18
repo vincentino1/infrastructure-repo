@@ -1,34 +1,5 @@
----
-- name: Confirm worker role is executing 
-  debug: 
-    msg: "Running join logic on {{ inventory_hostname }}"
-
-- name: Check if node already part of the cluster
-  command: kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name
-  register: kubectl_get_nodes
-  delegate_to: "{{ groups['k8s_master'][0] }}"
-  failed_when: false
-  changed_when: false
-  environment:
-    KUBECONFIG: /home/{{ k8s_user }}/.kube/config
-
-- name: Skip join if node already part of the cluster 
-  debug:
-    msg: "Node {{ inventory_hostname }} is already part of the cluster. Skipping join."
-  when: inventory_hostname in kubectl_get_nodes.stdout_lines
-
-- name: Generate join command on master
-  command: kubeadm token create --print-join-command --ttl 24h
-  register: join_command_raw
-  run_once: true
-  delegate_to: "{{ groups['k8s_master'][0] }}"
-  changed_when: false
-
-- name: Save join command for workers
-  set_fact:
-    join_command: "{{ join_command_raw.stdout }}"
-  run_once: true
-  delegate_to: "{{ groups['k8s_master'][0] }}"
+- debug:
+    var: hostvars[groups['k8s_master'][0]].join_command
 
 - name: Copy join command to worker
   copy:

@@ -1,0 +1,1 @@
+k8s_user: "{{ ansible_user }}"

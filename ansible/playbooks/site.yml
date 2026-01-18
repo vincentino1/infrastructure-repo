@@ -1,9 +1,4 @@
-- name: Setup common configuration
-  hosts: all
-  become: yes
-  roles:
-    - common
-
+---
 - name: Setup Docker/containerd
   hosts: k8s_cluster
   become: yes
@@ -28,20 +23,7 @@
   roles:
     - containerd-registry
 
-- name: Setup Jenkins
-  hosts: jenkins_server
-  become: yes
-  roles:
-    - jenkins
 
-- name: Setup Nexus
-  hosts: nexus_server
-  become: yes
-  roles:
-    - nexus
 
-- name: Setup PostgreSQL
-  hosts: database
-  become: yes
-  roles:
-    - postgresql
+
+
