@@ -16,7 +16,7 @@
 
 - name: Allow local postgres socket authentication
   blockinfile:
-    path: /etc/postgresql/15/main/pg_hba.conf
+    path: /etc/postgresql/14/main/pg_hba.conf
     block: |
       # Allow local socket access for postgres (Ansible automation)
       local   all   postgres   md5
