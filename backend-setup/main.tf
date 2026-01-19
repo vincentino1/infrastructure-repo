@@ -12,7 +12,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "terraform-kubeadm-state-s3-bucket"
+  bucket = var.bucket_name
   force_destroy = true #AWS will allow the bucket to be destroyed even if it contains files
 
 

@@ -57,8 +57,15 @@ variable "igw_tags" {
   }
 }
 
-variable "bastion_cidr" {
+variable "bastion_ssh_cidr" {
   description = "CIDR block allowed to access the bastion host"
+  type        = string
+  default     = "75.159.12.178/32"
+
+}
+
+variable "jenkins_ssh_cidr" {
+  description = "CIDR block allowed to access SSH from public"
   type        = string
   default     = "75.159.12.178/32"
 

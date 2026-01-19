@@ -8,9 +8,9 @@ output "k8s_worker_sg_id" {
   description = "The ID of the Kubernetes worker security group"
 }
 
-output "tools_sg_id" {
-  value       = module.tools_sg.security_group_id
-  description = "The ID of the CI/CD tools security group"
+output "nexus_sg_id" {
+  value       = module.nexus_sg.security_group_id
+  description = "The ID of the Nexus server security group"
 }
 
 output "db_sg_id" {
@@ -46,9 +46,14 @@ output "k8s_worker_private_ips" {
   value = [for inst in module.k8s-workers : inst.private_ip]
 }
 
-output "jenkins_server_private_ip" {
-  value       = module.jenkins-server.private_ip
-  description = "The private IP address of the Jenkins server"
+output "jenkins_server_public_ip" {
+  value       = module.jenkins-server.public_ip
+  description = "The public IP address of the Jenkins server"
+}
+
+output "nexus_server_public_ip" {
+  value       = module.nexus-server.public_ip
+  description = "The public IP address of the Nexus server"
 }
 
 output "db_server_private_ip" {
@@ -61,17 +66,13 @@ output "bastion_host_public_ip" {
   description = "The public IP address of the bastion host"
 }
 
-output "nexus_server_private_ip" {
-  value       = module.nexus-server.private_ip
-  description = "The private IP address of the Nexus server"
-}
 
 output "Jenkins_Server_URL" {
-  value = "http://${module.jenkins-server.private_ip}:8080"
+  value = "http://${module.jenkins-server.public_ip}:8080"
 }
 
 output "Nexus_Server_URL" {
-  value = "http://${module.nexus-server.private_ip}:8081"
+  value = "http://${module.nexus-server.public_ip}:8081"
 }
 
 output "bastion_ssh_command" {

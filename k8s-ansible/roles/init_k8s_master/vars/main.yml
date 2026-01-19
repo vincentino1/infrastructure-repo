@@ -1,0 +1,4 @@
+k8s_user: "{{ ansible_user }}"
+k8s_cluster_cidr: 192.168.0.0/16
+k8s_control_plane_endpoint: 10.0.10.109:6443 # mster private IP
+k8s_service_cidr: 10.96.0.0/12

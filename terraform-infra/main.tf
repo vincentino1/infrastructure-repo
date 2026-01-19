@@ -11,21 +11,21 @@ module "vpc" {
 
 
   public_subnet_tags = {
-    Name = "${var.environment}-public-subnet"
+    Name = "${var.environment}-k8s-public-subnet"
     Tier = "public"
   }
 
   private_subnet_tags = {
-    Name = "${var.environment}-private-subnet"
+    Name = "${var.environment}-k8s-private-subnet"
     Tier = "private"
   }
 
   private_route_table_tags = {
-    Name = "${var.environment}-private-rt"
+    Name = "${var.environment}-k8s-private-rt"
   }
 
   public_route_table_tags = {
-    Name = "${var.environment}-public-rt"
+    Name = "${var.environment}-k8s-public-rt"
   }
 
   nat_gateway_tags = var.nat_gateway_tags
@@ -38,7 +38,7 @@ module "vpc" {
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
-  Name = "${var.environment}-vpc"
+  Name = "${var.environment}-k8s-vpc"
 })
 
 }
@@ -160,12 +160,12 @@ module "k8s_worker_sg" {
 }
 
 # ---------------------- Nexus ----------------------
-module "tools_sg" {
+module "nexus_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.3"
 
-  name        = "${var.environment}-tools-sg"
-  description = "Security group for CI/CD tools"
+  name        = "${var.environment}-nexus-sg"
+  description = "Security group for Nexus server"
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
@@ -205,7 +205,7 @@ module "tools_sg" {
   ]
 
   tags = merge(var.tags, {
-    Name = "${var.environment}-ci-cd-tools-sg"
+    Name = "${var.environment}-ci-cd-nexus-sg"
   })
 }
 
@@ -226,17 +226,16 @@ module "jenkins_sg" {
       protocol    = "tcp"
       description = "Jenkins Web UI"
       cidr_blocks = var.vpc_cidr
-    }
-  ]
+    },
 
-  ingress_with_source_security_group_id = [
     {
-      from_port                = 22
-      to_port                  = 22
-      protocol                 = "tcp"
-      description              = "SSH from bastion"
-      source_security_group_id = module.bastion_sg.security_group_id
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      description = "SSH from bastion"
+      cidr_blocks = var.jenkins_ssh_cidr
     }
+
   ]
 
   egress_with_cidr_blocks = [
@@ -307,7 +306,8 @@ module "bastion_sg" {
   ingress_with_cidr_blocks = [
     {
       rule        = "ssh-tcp"
-      cidr_blocks = var.bastion_cidr
+      cidr_blocks = var.bastion_ssh_cider
+      from_port   = 22
     }
   ]
 
@@ -402,7 +402,7 @@ module "jenkins-server" {
   key_name               = var.ssh_key_name        
   vpc_security_group_ids = [module.jenkins_sg.security_group_id]
   monitoring             = true
-  subnet_id              = module.vpc.private_subnets[0]
+  subnet_id              = module.vpc.public_subnets[1]
   user_data              = data.template_file.tools_userdata["jenkins"].rendered
 
   disable_api_termination = false #Allow termination
@@ -432,9 +432,9 @@ module "nexus-server" {
   instance_type          = var.nexus_instance_type
   ami                    = data.aws_ami.ubuntu.id 
   key_name               = var.ssh_key_name        
-  vpc_security_group_ids = [module.tools_sg.security_group_id]
+  vpc_security_group_ids = [module.nexus_sg.security_group_id]
   monitoring             = true
-  subnet_id              = module.vpc.private_subnets[0]
+  subnet_id              = module.vpc.public_subnets[0]
   user_data              = data.template_file.tools_userdata["nexus"].rendered
 
   disable_api_termination = false #Allow termination
