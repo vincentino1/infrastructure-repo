@@ -57,19 +57,12 @@ variable "igw_tags" {
   }
 }
 
-variable "bastion_ssh_cidr" {
-  description = "CIDR block allowed to access the bastion host"
+variable "admin_ip" {
+  description = "Admin IP address allowed to access Jenkins"
   type        = string
   default     = "75.159.12.178/32"
-
 }
 
-variable "jenkins_ssh_cidr" {
-  description = "CIDR block allowed to access SSH from public"
-  type        = string
-  default     = "75.159.12.178/32"
-
-}
 
 variable "tags" {
   description = "Standard resource tags"
@@ -80,11 +73,11 @@ variable "tags" {
   }
 }
 
-variable "instance_type" {
-  type        = string
-  default     = "t3.medium"
-  description = "EC2 instance type for worker nodes"
-}
+# variable "instance_type" {
+#   type        = string
+#   default     = "t3.medium"
+#   description = "EC2 instance type for worker nodes"
+# }
 
 variable "jenkins_instance_type" {
   type        = string
@@ -105,24 +98,24 @@ variable "bastion_instance_type" {
   description = "EC2 instance type for bastion host"
 }
 
-variable "db_instance_type" {
-  type        = string
-  default     = "t3.small"
-  description = "EC2 instance type for database server"
+# variable "db_instance_type" {
+#   type        = string
+#   default     = "t3.small"
+#   description = "EC2 instance type for database server"
   
-}
+# }
 
-variable "worker_names" {
-  type        = list(string)
-  default     = ["k8s-worker-1", "k8s-worker-2", "k8s-worker-3"]
-  description = "List of worker node names"
-}
+# variable "worker_names" {
+#   type        = list(string)
+#   default     = ["k8s-worker-1", "k8s-worker-2", "k8s-worker-3"]
+#   description = "List of worker node names"
+# }
 
-variable "master_names" {
-  type        = list(string)
-  default     = ["k8s-master-1"]
-  description = "List of master node names"
-}
+# variable "master_names" {
+#   type        = list(string)
+#   default     = ["k8s-master-1"]
+#   description = "List of master node names"
+# }
 
 variable "ssh_key_name" {
   type        = string
@@ -130,17 +123,17 @@ variable "ssh_key_name" {
   default     = "my-project-key"
 }
 
-variable "master_volume_size" {
-  type        = number
-  default     = 50
-  description = "Root volume size in GB"
-}
+# variable "master_volume_size" {
+#   type        = number
+#   default     = 50
+#   description = "Root volume size in GB"
+# }
 
-variable "worker_volume_size" {
-  type        = number
-  default     = 50
-  description = "Root volume size in GB"
-}
+# variable "worker_volume_size" {
+#   type        = number
+#   default     = 50
+#   description = "Root volume size in GB"
+# }
 
 variable "jenkins_volume_size" {
   type        = number
@@ -155,15 +148,15 @@ variable "nexus_volume_size" {
   description = "Root volume size in GB"
 }
 
-variable "db_volume_size" {
-  type        = number
-  description = "Root volume size in GB"
-  default     = 50
-}
+# variable "db_volume_size" {
+#   type        = number
+#   description = "Root volume size in GB"
+#   default     = 50
+# }
 
-variable "bastion_volume_size" {
-  type        = number
-  default     = 15
-  description = "Root volume size in GB"
-}
-  
+  variable "bastion_volume_size" {
+    type        = number
+    default     = 15
+    description = "Root volume size in GB"
+  }
+    

@@ -20,31 +20,31 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-data "template_file" "master_userdata" {
-  for_each = toset(var.master_names)
-  template = file("${path.module}/Scripts/bootstrap.sh.tpl")
+# data "template_file" "master_userdata" {
+#   for_each = toset(var.master_names)
+#   template = file("${path.module}/Scripts/bootstrap.sh.tpl")
 
-  vars = {
-    hostname = "${var.environment}-${each.key}"
-    role     = "master"
-  }
-}
-data "template_file" "worker_userdata" {
-  for_each = toset(var.worker_names)
-  template = file("${path.module}/Scripts/bootstrap.sh.tpl")
+#   vars = {
+#     hostname = "${var.environment}-${each.key}"
+#     role     = "master"
+#   }
+# }
+# data "template_file" "worker_userdata" {
+#   for_each = toset(var.worker_names)
+#   template = file("${path.module}/Scripts/bootstrap.sh.tpl")
 
-  vars = {
-    hostname = "${var.environment}-${each.key}"
-    role     = "worker"
-  }
-}
+#   vars = {
+#     hostname = "${var.environment}-${each.key}"
+#     role     = "worker"
+#   }
+# }
 
 data "template_file" "tools_userdata" {
   for_each = {
     bastion  = "bastion-host"
     jenkins  = "jenkins-server"
     nexus    = "nexus-server"
-    db       = "db-server"
+    # db       = "db-server"
   }
 
   template = file("${path.module}/Scripts/bootstrap.sh.tpl")

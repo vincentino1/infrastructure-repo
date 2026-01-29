@@ -21,3 +21,4 @@ echo "Ansible installation complete." >> "$LOG"
 ansible --version >> "$LOG" 2>&1 
 fi
 
+ 

@@ -1,0 +1,21 @@
+jenkins_home: /var/lib/jenkins
+jenkins_url: http://3.96.222.84:8080
+jenkins_admin_user: admin
+jenkins_admin_password: "{{ vault_jenkins_admin_password }}"
+
+jenkins_plugins:
+  - blueocean 
+  - pipeline-stage-view
+  - git
+  - nodejs
+  - pipeline-utility-steps
+  - nexus-artifact-uploader
+  - pipeline-stage-view
+  - generic-webhook-trigger 
+  - ws-cleanup
+  - credentials-binding
+  - github
+  - docker-workflow 
+  - kubernetes-cli
+  - maven-plugin
+  

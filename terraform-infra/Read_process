@@ -1,0 +1,21 @@
+Self Managed K8s
+    - Setting up Jenkins with required plugins
+    - Setting up Nexus Repository Manager
+    - Setting up Docker Registry
+    - Setting up Kubernetes Cluster with one Master and two Worker Nodes
+    - Deploying a sample application using Jenkins Pipeline to demonstrate CI/CD process    
+    - Integrating Jenkins with Nexus Repository Manager and Docker Registry
+    - Using Ansible for automation of setup and configuration tasks
+
+Recent Edits:    
+
+    - Updated Jenkins server IP address in inventory and variable files.
+    - Modified Jenkins plugins list to include the correct plugins you want.
+    - Ensured consistency in Jenkins URL across variable files.
+
+Jenkins tools setup - For maven project builds
+     - Maven 3.6.3
+     - JDK 21 
+// Download URL for binary archive:https://download.oracle.com/java/21/archive/jdk-21.0.9_linux-x64_bin.tar.gz
+// Subdirectory of extracted archive : jdk-21.0.9
+

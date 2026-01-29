@@ -1,29 +1,44 @@
-- name: Install Java
-  apt:
-    name: openjdk-17-jdk
-    state: present
+---
+- name: Ensure keyring directory exists
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
 
-- name: Add Jenkins GPG key
-  apt_key:
-    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-    state: present
+- name: Download Jenkins GPG key (2026 key, ASCII armored)
+  get_url:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+    dest: /usr/share/keyrings/jenkins-keyring.asc
+    mode: "0644"
 
-- name: Add Jenkins repository
+- name: Add Jenkins apt repository (ASCII key, no dearmor)
   apt_repository:
-    repo: deb https://pkg.jenkins.io/debian-stable binary/
+    repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+    filename: jenkins
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Java 21 and fontconfig
+  apt:
+    name:
+      - fontconfig
+      - openjdk-21-jre
     state: present
 
 - name: Install Jenkins
   apt:
     name: jenkins
     state: present
-    update_cache: yes
 
-- name: Start Jenkins
+- name: Enable and start Jenkins
   systemd:
     name: jenkins
     state: started
     enabled: yes
+
 
 - name: Wait for Jenkins to start
   wait_for:
@@ -33,6 +48,8 @@
 - name: Get Jenkins initial admin password
   command: cat /var/lib/jenkins/secrets/initialAdminPassword
   register: jenkins_password
+  failed_when: false 
+  changed_when: false
 
 - name: Display Jenkins password
   debug:
@@ -42,20 +59,28 @@
   include_role:
     name: docker
 
-- name: Ensure docker group exists
-  group:
-    name: docker
+- name: Install Docker Engine and CLI
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
     state: present
+
+- name: Enable and start Docker
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
 
 - name: Add Jenkins user to docker group
   user:
-    name: jenkins 
+    name: jenkins
     groups: docker
     append: yes
 
-- name: Add ubuntu user to docker group
+- name: Add Ubuntu user to docker group
   user:
-    name: ubuntu 
+    name: ubuntu
     groups: docker
     append: yes
 
@@ -65,26 +90,31 @@
     dest: /usr/local/bin/kubectl
     mode: '0755'
 
-- name: Create Jenkins .kube directory
-  file:
-    path: /var/lib/jenkins/.kube
-    state: directory
-    owner: jenkins
-    group: jenkins
-    mode: '0700'
+- name: Install python3-pip
+  apt:
+    name: python3-pip
+    state: present  
 
-- name: Fetch admin.conf from Kubernetes master
-  fetch:
-    src: /etc/kubernetes/admin.conf       # path on k8s master
-    dest: /tmp/admin.conf                  # path on Ansible controller
-    flat: yes                              # saves directly as /tmp/admin.conf
-  delegate_to: k8s-master-1
-  run_once: true  
+# - name: Create Jenkins .kube directory
+#   file:
+#     path: /var/lib/jenkins/.kube
+#     state: directory
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0700'
 
-- name: Copy kubeconfig to Jenkins
-  copy:
-    src: /tmp/admin.conf  # Fetched from master
-    dest: /var/lib/jenkins/.kube/config
-    owner: jenkins
-    group: jenkins
-    mode: '0600'
+# - name: Fetch admin.conf from Kubernetes master
+#   fetch:
+#     src: /etc/kubernetes/admin.conf       # path on k8s master
+#     dest: /tmp/admin.conf                  # path on Ansible controller
+#     flat: yes                              # saves directly as /tmp/admin.conf
+#   delegate_to: k8s-master-1
+#   run_once: true  
+
+# - name: Copy kubeconfig to Jenkins
+#   copy:
+#     src: /tmp/admin.conf  # Fetched from master
+#     dest: /var/lib/jenkins/.kube/config
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0600'

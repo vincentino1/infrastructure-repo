@@ -43,123 +43,243 @@ module "vpc" {
 
 }
 
-################ Security Group Module #########################################
-
-# ---------------------- MASTER SG ----------------------
-module "k8s_master_sg" {
+################### APPLICATION LOAD BALANCER ###################################
+module "alb_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.3"
 
-  name        = "${var.environment}-k8s-master-sg"
-  description = "Security group for Kubernetes control plane"
-  vpc_id      = module.vpc.vpc_id
-
- 
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = 6443
-      to_port                  = 6443
-      protocol                 = "tcp"
-      description              = "Kubernetes API from workers"
-      source_security_group_id = module.k8s_worker_sg.security_group_id
-    },
-
-    {
-      from_port                = 6443
-      to_port                  = 6443
-      protocol                 = "tcp"
-      description              = "Kubernetes API from bastion"
-      source_security_group_id = module.bastion_sg.security_group_id
-    },
-
-    {
-      from_port                = 2379
-      to_port                  = 2380
-      protocol                 = "tcp"
-      description              = "etcd peer communication"
-      source_security_group_id = module.k8s_master_sg.security_group_id
-    },
-    {
-      from_port                = 10250
-      to_port                  = 10250
-      protocol                 = "tcp"
-      description              = "Kubelet API"
-      source_security_group_id = module.k8s_master_sg.security_group_id
-    },
-    {
-      from_port                = 22
-      to_port                  = 22
-      protocol                 = "tcp"
-      description              = "SSH from bastion"
-      source_security_group_id = module.bastion_sg.security_group_id
-    }
-  ]
-
-  egress_with_cidr_blocks = [
-    {
-      rule        = "all-all"
-      description = "Internal VPC traffic only"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
-
-  tags = merge(var.tags, {
-    Name = "${var.environment}-k8s-control-plane-sg"
-  })
-}
-
-# ---------------------- WORKER SG ----------------------
-module "k8s_worker_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.3"
-
-  name        = "${var.environment}-k8s-worker-sg"
-  description = "Security group for Kubernetes worker nodes"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = 10250
-      to_port                  = 10250
-      protocol                 = "tcp"
-      description              = "Kubelet API from masters"
-      source_security_group_id = module.k8s_master_sg.security_group_id
-    },
-
-    {
-    from_port                = 22
-    to_port                  = 22
-    protocol                 = "tcp"
-    description              = "SSH from bastion"
-    source_security_group_id = module.bastion_sg.security_group_id
-    }
-
-  ]
+  name   = "${var.environment}-alb-sg"
+  vpc_id = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
     {
-      from_port   = 30000
-      to_port     = 32767
+      from_port   = 8081
+      to_port     = 8081
       protocol    = "tcp"
-      description = "NodePort services from vpc"
-      cidr_blocks = var.vpc_cidr
+      cidr_blocks = "0.0.0.0/0"
+      description = "Nexus UI"
+    },
+    {
+      from_port   = 8080
+      to_port     = 8080
+      protocol    = "tcp"
+      cidr_blocks = "0.0.0.0/0"
+      description = "Jenkins UI"
     }
   ]
 
   egress_with_cidr_blocks = [
     {
       rule        = "all-all"
-      description = "Internal VPC traffic only"
       cidr_blocks = "0.0.0.0/0"
+      description = "Allow all outbound"
     }
   ]
+}
+############################# ALB Module #########################################
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "10.5.0"
+
+  name     = "${var.environment}-public-alb"
+  internal = false
+  vpc_id   = module.vpc.vpc_id
+  subnets  = module.vpc.public_subnets
+
+  security_groups = [module.alb_sg.security_group_id]
+
+  enable_deletion_protection = false
+
+listeners = {
+  nexus = {
+    port     = 8081
+    protocol = "HTTP"
+    forward = {
+      target_group_key = "nex-tg"
+    }
+  }
+
+  jenkins = {
+    port     = 8080
+    protocol = "HTTP"
+    forward = {
+      target_group_key = "jen-tg"
+    }
+  }
+}
+
+  target_groups = {
+    nex-tg = {
+      name_prefix = "nex"
+      port        = 8081
+      protocol    = "HTTP"
+      target_type = "instance"
+      target_id = module.nexus-server.id
+      health_check = {
+        path                = "/"
+        protocol            = "HTTP"
+        matcher             = "200-399"
+        interval            = 30
+        timeout             = 5
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+      }
+    }
+    jen-tg = {
+      name_prefix = "jen"
+      port        = 8080
+      protocol    = "HTTP"
+      target_type = "instance"
+      target_id = module.jenkins-server.id
+      health_check = {
+        path                = "/login"
+        protocol            = "HTTP"
+        matcher             = "200-399"
+        interval            = 30
+        timeout             = 5
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+      }
+    }
+  }
 
   tags = merge(var.tags, {
-    Name = "${var.environment}-k8s-worker-sg"
+    Name = "${var.environment}-public-alb"
   })
 }
 
-# ---------------------- Nexus ----------------------
+########################## TARGET GROUPS ATTACHMENT ##########################################
+
+resource "aws_lb_target_group_attachment" "jenkins" {
+  target_group_arn = module.alb.target_groups["jen-tg"].arn
+  target_id        = module.jenkins-server.id
+  port             = 8080
+}
+
+resource "aws_lb_target_group_attachment" "nexus" {
+  target_group_arn = module.alb.target_groups["nex-tg"].arn
+  target_id        = module.nexus-server.id
+  port             = 8081
+}
+
+
+################ Security Group Module #########################################
+
+# ---------------------- MASTER SG ----------------------
+# module "k8s_master_sg" {
+#   source  = "terraform-aws-modules/security-group/aws"
+#   version = "~> 5.3"
+
+#   name        = "${var.environment}-k8s-master-sg"
+#   description = "Security group for Kubernetes control plane"
+#   vpc_id      = module.vpc.vpc_id
+
+ 
+#   ingress_with_source_security_group_id = [
+#     {
+#       from_port                = 6443
+#       to_port                  = 6443
+#       protocol                 = "tcp"
+#       description              = "Kubernetes API from workers"
+#       source_security_group_id = module.k8s_worker_sg.security_group_id
+#     },
+
+#     {
+#       from_port                = 6443
+#       to_port                  = 6443
+#       protocol                 = "tcp"
+#       description              = "Kubernetes API from bastion"
+#       source_security_group_id = module.bastion_sg.security_group_id
+#     },
+
+#     {
+#       from_port                = 2379
+#       to_port                  = 2380
+#       protocol                 = "tcp"
+#       description              = "etcd peer communication"
+#       source_security_group_id = module.k8s_master_sg.security_group_id
+#     },
+#     {
+#       from_port                = 10250
+#       to_port                  = 10250
+#       protocol                 = "tcp"
+#       description              = "Kubelet API"
+#       source_security_group_id = module.k8s_master_sg.security_group_id
+#     },
+#     {
+#       from_port                = 22
+#       to_port                  = 22
+#       protocol                 = "tcp"
+#       description              = "SSH from bastion"
+#       source_security_group_id = module.bastion_sg.security_group_id
+#     }
+#   ]
+
+#   egress_with_cidr_blocks = [
+#     {
+#       rule        = "all-all"
+#       description = "Internal VPC traffic only"
+#       cidr_blocks = "0.0.0.0/0"
+#     }
+#   ]
+
+#   tags = merge(var.tags, {
+#     Name = "${var.environment}-k8s-control-plane-sg"
+#   })
+# }
+
+# # ---------------------- WORKER SG ----------------------
+# module "k8s_worker_sg" {
+#   source  = "terraform-aws-modules/security-group/aws"
+#   version = "~> 5.3"
+
+#   name        = "${var.environment}-k8s-worker-sg"
+#   description = "Security group for Kubernetes worker nodes"
+#   vpc_id      = module.vpc.vpc_id
+
+#   ingress_with_source_security_group_id = [
+#     {
+#       from_port                = 10250
+#       to_port                  = 10250
+#       protocol                 = "tcp"
+#       description              = "Kubelet API from masters"
+#       source_security_group_id = module.k8s_master_sg.security_group_id
+#     },
+
+#     {
+#     from_port                = 22
+#     to_port                  = 22
+#     protocol                 = "tcp"
+#     description              = "SSH from bastion"
+#     source_security_group_id = module.bastion_sg.security_group_id
+#     }
+
+#   ]
+
+#   ingress_with_cidr_blocks = [
+#     {
+#       from_port   = 30000
+#       to_port     = 32767
+#       protocol    = "tcp"
+#       description = "NodePort services from vpc"
+#       cidr_blocks = var.vpc_cidr
+#     }
+#   ]
+
+#   egress_with_cidr_blocks = [
+#     {
+#       rule        = "all-all"
+#       description = "Internal VPC traffic only"
+#       cidr_blocks = "0.0.0.0/0"
+#     }
+#   ]
+
+#   tags = merge(var.tags, {
+#     Name = "${var.environment}-k8s-worker-sg"
+#   })
+# }
+
+# # ---------------------- Nexus-sg ----------------------
 module "nexus_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.3"
@@ -169,14 +289,6 @@ module "nexus_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
-
-    {
-      from_port   = 8081
-      to_port     = 8081
-      protocol    = "tcp"
-      description = "Nexus Repository"
-      cidr_blocks = var.vpc_cidr
-    },
     {
       from_port   = 5000
       to_port     = 5000
@@ -187,6 +299,13 @@ module "nexus_sg" {
   ]
 
   ingress_with_source_security_group_id = [
+    {
+      from_port                = 8081
+      to_port                  = 8081
+      protocol                 = "tcp"
+      source_security_group_id = module.alb_sg.security_group_id
+      description              = "Nexus from ALB"
+    },
     {
       from_port                = 22
       to_port                  = 22
@@ -218,30 +337,27 @@ module "jenkins_sg" {
   description = "Security group for Jenkins server"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_with_cidr_blocks = [
-
+  ingress_with_source_security_group_id = [
     {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      description = "Jenkins Web UI"
-      cidr_blocks = var.vpc_cidr
+      from_port                = 8080
+      to_port                  = 8080
+      protocol                 = "tcp"
+      source_security_group_id = module.alb_sg.security_group_id
+      description              = "Jenkins from ALB"
     },
-
     {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      description = "SSH from bastion"
-      cidr_blocks = var.jenkins_ssh_cidr
+      from_port                = 22
+      to_port                  = 22
+      protocol                 = "tcp"
+      description              = "SSH from admin IP"
+      source_security_group_id = module.bastion_sg.security_group_id
     }
-
   ]
 
   egress_with_cidr_blocks = [
     {
       rule        = "all-all"
-      description = "Internal VPC traffic only"
+      description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }
   ] 
@@ -253,48 +369,48 @@ module "jenkins_sg" {
 }
 
 # ---------------------- DB SG ----------------------
-module "db_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.3"
+# module "db_sg" {
+#   source  = "terraform-aws-modules/security-group/aws"
+#   version = "~> 5.3"
 
-  name        = "${var.environment}-db-sg"
-  description = "Security group for PostgreSQL database"
-  vpc_id      = module.vpc.vpc_id
+#   name        = "${var.environment}-db-sg"
+#   description = "Security group for PostgreSQL database"
+#   vpc_id      = module.vpc.vpc_id
 
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = 5432
-      to_port                  = 5432
-      protocol                 = "tcp"
-      description              = "DB access from app layer"
-      source_security_group_id = module.k8s_worker_sg.security_group_id
-    },
+#   ingress_with_source_security_group_id = [
+#     {
+#       from_port                = 5432
+#       to_port                  = 5432
+#       protocol                 = "tcp"
+#       description              = "DB access from app layer"
+#       source_security_group_id = module.k8s_worker_sg.security_group_id
+#     },
 
-    {
-    from_port                = 22
-    to_port                  = 22
-    protocol                 = "tcp"
-    description              = "SSH from bastion"
-    source_security_group_id = module.bastion_sg.security_group_id
-    }
+#     {
+#     from_port                = 22
+#     to_port                  = 22
+#     protocol                 = "tcp"
+#     description              = "SSH from bastion"
+#     source_security_group_id = module.bastion_sg.security_group_id
+#     }
 
-  ]
+#   ]
 
-  egress_with_cidr_blocks = [
-    {
-      rule        = "all-all"
-      description = "Internal VPC traffic only"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
+#   egress_with_cidr_blocks = [
+#     {
+#       rule        = "all-all"
+#       description = "Internal VPC traffic only"
+#       cidr_blocks = "0.0.0.0/0"
+#     }
+#   ]
     
   
-  tags = merge(var.tags, {
-    Name = "${var.environment}-postgresql-sg"
-  })
-}
+#   tags = merge(var.tags, {
+#     Name = "${var.environment}-postgresql-sg"
+#   })
+# }
 
-# ---------------------- BASTION SG ----------------------
+# # ---------------------- BASTION SG ----------------------
 module "bastion_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.3"
@@ -306,7 +422,7 @@ module "bastion_sg" {
   ingress_with_cidr_blocks = [
     {
       rule        = "ssh-tcp"
-      cidr_blocks = var.bastion_ssh_cider
+      cidr_blocks = var.admin_ip
       from_port   = 22
     }
   ]
@@ -320,77 +436,77 @@ module "bastion_sg" {
   })
 }
 
-###################### Ec2-Instance Module #########################################
+# ###################### Ec2-Instance Module #########################################
 
-module "k8s-master" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "6.2.0"
+# module "k8s-master" {
+#   source  = "terraform-aws-modules/ec2-instance/aws"
+#   version = "6.2.0"
 
-  for_each = toset(var.master_names)
+#   for_each = toset(var.master_names)
 
-  name                   = "${var.environment}-${each.key}"
+#   name                   = "${var.environment}-${each.key}"
 
-  instance_type          = var.instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name        
-  vpc_security_group_ids = [module.k8s_master_sg.security_group_id]
-  monitoring             = true
-  subnet_id              = module.vpc.private_subnets[index(var.master_names, each.key) % length(module.vpc.private_subnets)]
-  user_data              = data.template_file.master_userdata[each.key].rendered
+#   instance_type          = var.instance_type
+#   ami                    = data.aws_ami.ubuntu.id 
+#   key_name               = var.ssh_key_name        
+#   vpc_security_group_ids = [module.k8s_master_sg.security_group_id]
+#   monitoring             = true
+#   subnet_id              = module.vpc.private_subnets[index(var.master_names, each.key) % length(module.vpc.private_subnets)]
+#   user_data              = data.template_file.master_userdata[each.key].rendered
 
-  disable_api_termination = false #Allow termination
-  metadata_options = {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
-root_block_device = {
-    encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.master_volume_size
-  }
+#   disable_api_termination = false #Allow termination
+#   metadata_options = {
+#     http_endpoint = "enabled"
+#     http_tokens   = "required"
+#   }
+# root_block_device = {
+#     encrypted   = true
+#     volume_type = "gp3"
+#     volume_size = var.master_volume_size
+#   }
 
-  tags = merge(
-    var.tags,
-    {
-      Role        = "master"
-    }
-  )
-}
+#   tags = merge(
+#     var.tags,
+#     {
+#       Role        = "master"
+#     }
+#   )
+# }
 
-module "k8s-workers" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "6.2.0"
+# module "k8s-workers" {
+#   source  = "terraform-aws-modules/ec2-instance/aws"
+#   version = "6.2.0"
 
-  for_each = toset(var.worker_names)
+#   for_each = toset(var.worker_names)
 
-  name    = "${var.environment}-${each.key}"
+#   name    = "${var.environment}-${each.key}"
 
-  instance_type          = var.instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name        
-  vpc_security_group_ids = [module.k8s_worker_sg.security_group_id]
-  monitoring             = true
-  subnet_id              = module.vpc.private_subnets[index(var.worker_names, each.key) % length(module.vpc.private_subnets)]
-  user_data              = data.template_file.worker_userdata[each.key].rendered
+#   instance_type          = var.instance_type
+#   ami                    = data.aws_ami.ubuntu.id 
+#   key_name               = var.ssh_key_name        
+#   vpc_security_group_ids = [module.k8s_worker_sg.security_group_id]
+#   monitoring             = true
+#   subnet_id              = module.vpc.private_subnets[index(var.worker_names, each.key) % length(module.vpc.private_subnets)]
+#   user_data              = data.template_file.worker_userdata[each.key].rendered
 
-  disable_api_termination = false #Allow termination
-  metadata_options = {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
-  root_block_device = {
-    encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.worker_volume_size
-    }
+#   disable_api_termination = false #Allow termination
+#   metadata_options = {
+#     http_endpoint = "enabled"
+#     http_tokens   = "required"
+#   }
+#   root_block_device = {
+#     encrypted   = true
+#     volume_type = "gp3"
+#     volume_size = var.worker_volume_size
+#     }
   
-  tags = merge(
-    var.tags,
-    {
-      Role        = "worker"
-    }
-  )
-}
+#   tags = merge(
+#     var.tags,
+#     {
+#       Role        = "worker"
+#     }
+#   )
+# }
 
 module "jenkins-server" {
   source  = "terraform-aws-modules/ec2-instance/aws"
@@ -402,7 +518,7 @@ module "jenkins-server" {
   key_name               = var.ssh_key_name        
   vpc_security_group_ids = [module.jenkins_sg.security_group_id]
   monitoring             = true
-  subnet_id              = module.vpc.public_subnets[1]
+  subnet_id              = module.vpc.private_subnets[1]
   user_data              = data.template_file.tools_userdata["jenkins"].rendered
 
   disable_api_termination = false #Allow termination
@@ -434,7 +550,7 @@ module "nexus-server" {
   key_name               = var.ssh_key_name        
   vpc_security_group_ids = [module.nexus_sg.security_group_id]
   monitoring             = true
-  subnet_id              = module.vpc.public_subnets[0]
+  subnet_id              = module.vpc.private_subnets[0]
   user_data              = data.template_file.tools_userdata["nexus"].rendered
 
   disable_api_termination = false #Allow termination
@@ -487,35 +603,35 @@ module "bastion-host" {
   )
 }
 
-module "db_server" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "6.2.0"
+# module "db_server" {
+#   source  = "terraform-aws-modules/ec2-instance/aws"
+#   version = "6.2.0"
 
-  name                   = "${var.environment}-db-server"
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.db_instance_type
-  key_name               = var.ssh_key_name
-  subnet_id              = module.vpc.private_subnets[1]
-  vpc_security_group_ids = [module.db_sg.security_group_id]
-  monitoring             = true
-  user_data              = data.template_file.tools_userdata["db"].rendered
+#   name                   = "${var.environment}-db-server"
+#   ami                    = data.aws_ami.ubuntu.id
+#   instance_type          = var.db_instance_type
+#   key_name               = var.ssh_key_name
+#   subnet_id              = module.vpc.private_subnets[1]
+#   vpc_security_group_ids = [module.db_sg.security_group_id]
+#   monitoring             = true
+#   user_data              = data.template_file.tools_userdata["db"].rendered
 
-  disable_api_termination = false #Allow termination
-  metadata_options = {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
+#   disable_api_termination = false #Allow termination
+#   metadata_options = {
+#     http_endpoint = "enabled"
+#     http_tokens   = "required"
+#   }
 
-  root_block_device = {
-      encrypted   = true
-      volume_size = var.db_volume_size
-      volume_type = "gp3"
-    }
+#   root_block_device = {
+#       encrypted   = true
+#       volume_size = var.db_volume_size
+#       volume_type = "gp3"
+#     }
 
-  tags = merge(var.tags, {
-    Role = "database"
-  })
-}
+#   tags = merge(var.tags, {
+#     Role = "database"
+#   })
+# }
 
 
 

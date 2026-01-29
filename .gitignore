@@ -1,3 +1,6 @@
+# Ignore Vault files containing sensitive data
+**/vault
+
 # .gitignore
 # Terraform files
 **/.terraform/
