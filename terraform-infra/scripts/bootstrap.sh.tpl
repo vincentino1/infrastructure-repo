@@ -12,12 +12,13 @@ echo "Running bastion-host setup..." >> "$LOG"
 echo "Installing Ansible (via pip)..." >> "$LOG" 
 apt install -y python3-pip >> "$LOG" 2>&1
 
-python3 -m pip install --user --upgrade ansible >> "$LOG" 2>&1
-echo "Ansible installation complete." >> "$LOG"
+pip3 install ansible >> "$LOG" 2>&1
 
-export PATH=$HOME/.local/bin:$PATH
- 
-echo "Ansible installation complete." >> "$LOG" 
+export PATH=/usr/local/bin:$PATH
+
+echo "Ansible installation complete." >> "$LOG"
+which ansible >> "$LOG" 2>&1
+ansible --version >> "$LOG" 2>&1
 ansible --version >> "$LOG" 2>&1 
 fi
 
