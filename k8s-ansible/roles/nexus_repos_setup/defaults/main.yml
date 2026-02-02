@@ -1,4 +1,4 @@
-nexus_url: "http://nexus:8081"
+nexus_url: "http://10.0.10.147:8081"
 nexus_username: "admin"
 nexus_password: "admin123"
 
