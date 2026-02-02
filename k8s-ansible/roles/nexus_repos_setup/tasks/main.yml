@@ -1,0 +1,7 @@
+- import_tasks: blobstores.yml
+- import_tasks: repos.yml
+- import_tasks: roles.yml # create jenkins-ci-role
+- import_tasks: users.yml # assign it to user
+
+
+

@@ -1,0 +1,29 @@
+- name: Create Jenkins CI role
+  cloudkrafter.nexus.nexus_role:
+    name: jenkins-ci-role
+    description: "Least-privilege CI role for Jenkins"
+    privileges:
+      # Maven
+      - nx-repository-view-maven2-*-read
+      - nx-repository-view-maven2-*-add
+      - nx-repository-view-maven2-*-edit
+
+      # npm
+      - nx-repository-view-npm-*-read
+      - nx-repository-view-npm-*-add
+      - nx-repository-view-npm-*-edit
+
+      # PyPI
+      - nx-repository-view-pypi-*-read
+      - nx-repository-view-pypi-*-add
+      - nx-repository-view-pypi-*-edit
+
+      # Docker
+      - nx-repository-view-docker-*-read
+      - nx-repository-view-docker-*-add
+      - nx-repository-view-docker-*-edit
+
+    state: present
+    nexus_url: "{{ nexus_url }}"
+    nexus_username: "{{ nexus_username }}"
+    nexus_password: "{{ nexus_password }}"

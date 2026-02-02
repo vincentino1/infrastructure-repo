@@ -18,4 +18,5 @@ jenkins_plugins:
   - docker-workflow 
   - kubernetes-cli
   - maven-plugin
+  - config-file-provider
   

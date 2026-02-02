@@ -1,0 +1,16 @@
+- name: Create Nexus repositories
+  cloudkrafter.nexus.nexus_repos:
+    name: "{{ item.name }}"
+    format: "{{ item.format }}"
+    type: "{{ item.type }}"
+    remote_url: "{{ item.remote_url | default(omit) }}"
+    write_policy: "{{ item.write_policy | default(omit) }}"
+    members: "{{ item.members | default(omit) }}"
+    blob_store: "{{ item.blob_store | default(omit) }}"
+    http_port: "{{ item.http_port | default(omit) }}"
+    enable_v1: "{{ item.enable_v1 | default(omit) }}"
+    state: present
+    nexus_url: "{{ nexus_url }}"
+    nexus_username: "{{ nexus_username }}"
+    nexus_password: "{{ nexus_password }}"
+  loop: "{{ nexus_repositories }}"

@@ -53,7 +53,15 @@ After the provisioning process completes, the IP addresses of the Kubernetes mas
 
 ---
 
-### Step 3: Update hosts.ini File
+### Step 3: SSH into your Bastion host and clone this repo
+3b. Make sure your key has proper permissions
+3c. Ping all hosts to ensure your Bastion host can communicate with other hosts in your private network. (Optional)
+
+```bash 
+ansible -i inventories/hosts.ini -m ping
+```
+
+### Step 4: Update hosts.ini File
 
 ```bash
 cd ../k8s-ansible
@@ -63,7 +71,7 @@ Copy these IP addresses and update the **inventories/hosts.ini** file located in
 
 ---
 
-### Step 4: Prepare Nodes
+### Step 5: Prepare Nodes
 
 Apply the following command to install all required dependencies on all nodes:
 
@@ -73,7 +81,7 @@ ansible-playbook -i inventories/hosts.ini playbooks/all.yml
 
 ---
 
-### Step 5: Initialize the Cluster and Join Worker Nodes
+### Step 6: Initialize the Cluster and Join Worker Nodes
 
 Run the following playbook to initialize the Kubernetes cluster and join the worker nodes:
 
@@ -83,10 +91,20 @@ ansible-playbook -i inventories/hosts.ini playbooks/cluster.yml
 
 ---
 
-### Step 6: Configure Additional Tools (Optional)
+### Step 7: Configure Additional Tools (Optional)
 
 ```bash
 ansible-playbook -i inventories/hosts.ini playbooks/db.yml
-ansible-playbook -i inventories/hosts.ini playbooks/jenkins.yml
+
 ansible-playbook -i inventories/hosts.ini playbooks/nexus.yml
+```
+### Setup Jenkins Server 
+```bash
+ansible-playbook -i inventories/hosts.ini playbooks/jenkins.yml
+```
+### Install plugins in Jenkins 
+
+### NOTE: Make sure to login with Jenkins Initial password and create username and Password for authentication before running this command otherwise you will get Error **"HTTP Error 401: Unauthorized"**.
+```bash
+ansible-playbook -i inventories/hosts.ini playbooks/jenkins_plugins.yml --ask-vault-pass
 ```
