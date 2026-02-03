@@ -1,5 +1,5 @@
 - name: Create blobstores
-  cloudkrafter.nexus.nexus_blobstore:
+  nexus_blobstore:
     name: "{{ item.name }}"
     type: file
     path: "{{ item.path }}"
