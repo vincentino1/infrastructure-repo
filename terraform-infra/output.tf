@@ -70,12 +70,17 @@ output "bastion_ssh_command" {
   value = "ssh -i ~/.ssh/my-project-key.pem ubuntu@${module.bastion-host.public_ip}"
 }
 
-output "Jenkins_Server_URL" {
+output "Jenkins_URL" {
   value = "http://${module.alb.dns_name}/jenkins/"
 }
 
-output "Nexus_Server_URL" {
+output "Nexus_URL" {
   value = "http://${module.alb.dns_name}/nexus/"
+}
+
+output "Nexus_UI_Repos" {
+  value = "http://${module.alb.dns_name}/repository/<repo-name>/"
+  
 }
 
 

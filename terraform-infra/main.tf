@@ -68,7 +68,7 @@ module "alb" {
   security_group_egress_rules = {
     all = {
       ip_protocol = "-1"
-      cidr_ipv4   = "10.0.0.0/16"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -77,62 +77,64 @@ module "alb" {
       port     = 80
       protocol = "HTTP"
 
+      # fixed_response = {
+      #   status_code  = "404"
+      #   content_type = "text/plain"
+      #   message_body = "Not Found"
+      # }
       forward = {
-        target_group_key = "nex-tgt"
+        target_group_key = "nexus"
       }
 
       rules = {
         nexus = {
-          priority = 10
-
+          priority = 20
           actions = [
             {
-            forward = {
-              target_group_key = "nex-tgt"
+              forward = {
+                target_group_key = "nexus"  
+              }                         
             }
-          }
-        ]
+          ]
 
           conditions = [
             {
               path_pattern = {
-                values = ["/", "/nexus*", "/repository*"]
+                values = ["/nexus*", "/repository*"]
               }
             }
           ]
         }
 
         jenkins = {
-          priority = 20
-
+          priority = 10
           actions = [
             {
               forward = {
-                target_group_key = "jen-tgt"
-              }
+                target_group_key = "jenkins"
+              }                          
             }
           ]
-
           conditions = [
             {
               path_pattern = {
-                values = ["/jenkins*", "/login*"]
+                values = ["/jenkins*"]
               }
             }
           ]
+        }
       }
     }
   }
-}
   target_groups = {
-    nex-tgt = {
+    nexus = {
       name_prefix = "nex"
       port        = 8081
       protocol    = "HTTP"
       target_type = "instance"
-      target_id = module.nexus-server.id
+      target_id        = module.nexus-server.id
       health_check = {
-        path                = "/"
+        path                = "/nexus/"
         protocol            = "HTTP"
         matcher             = "200-399"
         interval            = 30
@@ -141,14 +143,14 @@ module "alb" {
         unhealthy_threshold = 2
       }
     }
-    jen-tgt = {
-      name_prefix = "jen"
+    jenkins = {
+      name_prefix = "jenks"
       port        = 8080
       protocol    = "HTTP"
       target_type = "instance"
-      target_id = module.jenkins-server.id
+      target_id        = module.jenkins-server.id
       health_check = {
-        path                = "/login"
+        path                = "/jenkins/login"
         protocol            = "HTTP"
         matcher             = "200-399"
         interval            = 30
@@ -162,20 +164,6 @@ module "alb" {
   tags = merge(var.tags, {
     Name = "${var.environment}-public-alb"
   })
-}
-
-########################## TARGET GROUPS ATTACHMENT ##########################################
-
-resource "aws_lb_target_group_attachment" "jenkins" {
-  target_group_arn = module.alb.target_groups["jen-tgt"].arn
-  target_id        = module.jenkins-server.id
-  port             = 8080
-}
-
-resource "aws_lb_target_group_attachment" "nexus" {
-  target_group_arn = module.alb.target_groups["nex-tgt"].arn
-  target_id        = module.nexus-server.id
-  port             = 8081
 }
 
 
