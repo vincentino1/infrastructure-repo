@@ -43,130 +43,6 @@ module "vpc" {
 
 }
 
-################### APPLICATION LOAD BALANCER ###################################
-############################# ALB Module #########################################
-module "alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "10.5.0"
-
-  name     = "${var.environment}-public-alb"
-  internal = false
-  vpc_id   = module.vpc.vpc_id
-  subnets  = module.vpc.public_subnets
-  enable_deletion_protection = false
-
-  security_group_ingress_rules = {
-    http = {
-      from_port   = 80
-      to_port     = 80
-      ip_protocol = "tcp"
-      description = "HTTP access to ALB"
-      cidr_ipv4   = "0.0.0.0/0"
-    }
-  }
-
-  security_group_egress_rules = {
-    all = {
-      ip_protocol = "-1"
-      cidr_ipv4   = "0.0.0.0/0"
-    }
-  }
-
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-
-      # fixed_response = {
-      #   status_code  = "404"
-      #   content_type = "text/plain"
-      #   message_body = "Not Found"
-      # }
-      forward = {
-        target_group_key = "nexus"
-      }
-
-      rules = {
-        nexus = {
-          priority = 20
-          actions = [
-            {
-              forward = {
-                target_group_key = "nexus"  
-              }                         
-            }
-          ]
-
-          conditions = [
-            {
-              path_pattern = {
-                values = ["/nexus*", "/repository*"]
-              }
-            }
-          ]
-        }
-
-        jenkins = {
-          priority = 10
-          actions = [
-            {
-              forward = {
-                target_group_key = "jenkins"
-              }                          
-            }
-          ]
-          conditions = [
-            {
-              path_pattern = {
-                values = ["/jenkins*"]
-              }
-            }
-          ]
-        }
-      }
-    }
-  }
-  target_groups = {
-    nexus = {
-      name_prefix = "nex"
-      port        = 8081
-      protocol    = "HTTP"
-      target_type = "instance"
-      target_id        = module.nexus-server.id
-      health_check = {
-        path                = "/nexus/"
-        protocol            = "HTTP"
-        matcher             = "200-399"
-        interval            = 30
-        timeout             = 5
-        healthy_threshold   = 2
-        unhealthy_threshold = 2
-      }
-    }
-    jenkins = {
-      name_prefix = "jenks"
-      port        = 8080
-      protocol    = "HTTP"
-      target_type = "instance"
-      target_id        = module.jenkins-server.id
-      health_check = {
-        path                = "/jenkins/login"
-        protocol            = "HTTP"
-        matcher             = "200-399"
-        interval            = 30
-        timeout             = 5
-        healthy_threshold   = 2
-        unhealthy_threshold = 2
-      }
-    }
-  }
-
-  tags = merge(var.tags, {
-    Name = "${var.environment}-public-alb"
-  })
-}
-
-
 ################ Security Group Module #########################################
 
 # ---------------------- MASTER SG ----------------------
@@ -299,23 +175,24 @@ module "nexus_sg" {
       protocol    = "tcp"
       description = "Docker Registry"
       cidr_blocks = var.vpc_cidr
-    }
-  ]
-
-  ingress_with_source_security_group_id = [
+    }, 
     {
       from_port                = 8081
       to_port                  = 8081
       protocol                 = "tcp"
-      source_security_group_id = module.alb.security_group_id
-      description              = "Nexus from ALB"
-    },
+      description              = "Nexus"
+      cidr_blocks = var.vpc_cidr
+    }
+  ]
+  
+  ingress_with_source_security_group_id = [
     {
       from_port                = 22
       to_port                  = 22
       protocol                 = "tcp"
       description              = "SSH from bastion"
       source_security_group_id = module.bastion_sg.security_group_id
+      
     }
   ]
 
@@ -341,14 +218,17 @@ module "jenkins_sg" {
   description = "Security group for Jenkins server"
   vpc_id      = module.vpc.vpc_id
 
+    ingress_with_cidr_blocks = [
+      {
+      from_port   = 8080
+      to_port     = 8080
+      protocol    = "tcp"
+      description = "Jenkins"
+      cidr_blocks = var.vpc_cidr
+      }
+    ]
+
   ingress_with_source_security_group_id = [
-    {
-      from_port                = 8080
-      to_port                  = 8080
-      protocol                 = "tcp"
-      source_security_group_id = module.alb.security_group_id
-      description              = "Jenkins from ALB"
-    },
     {
       from_port                = 22
       to_port                  = 22
