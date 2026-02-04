@@ -218,7 +218,7 @@ module "jenkins_sg" {
   description = "Security group for Jenkins server"
   vpc_id      = module.vpc.vpc_id
 
-    ingress_with_cidr_blocks = [
+  ingress_with_cidr_blocks = [
       {
       from_port   = 8080
       to_port     = 8080
@@ -233,7 +233,7 @@ module "jenkins_sg" {
       from_port                = 22
       to_port                  = 22
       protocol                 = "tcp"
-      description              = "SSH from admin IP"
+      description              = "SSH from bastion"
       source_security_group_id = module.bastion_sg.security_group_id
     }
   ]
