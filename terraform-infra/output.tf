@@ -71,11 +71,11 @@ output "bastion_ssh_command" {
 }
 
 output "Jenkins_Server_URL" {
-  value = "http://${module.alb.dns_name}:8080"
+  value = "http://${module.alb.dns_name}/jenkins/"
 }
 
 output "Nexus_Server_URL" {
-  value = "http://${module.alb.dns_name}:8081"
+  value = "http://${module.alb.dns_name}/nexus/"
 }
 
 

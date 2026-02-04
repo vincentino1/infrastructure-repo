@@ -44,38 +44,6 @@ module "vpc" {
 }
 
 ################### APPLICATION LOAD BALANCER ###################################
-module "alb_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.3"
-
-  name   = "${var.environment}-alb-sg"
-  vpc_id = module.vpc.vpc_id
-
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = 8081
-      to_port     = 8081
-      protocol    = "tcp"
-      cidr_blocks = "0.0.0.0/0"
-      description = "Nexus UI"
-    },
-    {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      cidr_blocks = "0.0.0.0/0"
-      description = "Jenkins UI"
-    }
-  ]
-
-  egress_with_cidr_blocks = [
-    {
-      rule        = "all-all"
-      cidr_blocks = "0.0.0.0/0"
-      description = "Allow all outbound"
-    }
-  ]
-}
 ############################# ALB Module #########################################
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
@@ -85,31 +53,79 @@ module "alb" {
   internal = false
   vpc_id   = module.vpc.vpc_id
   subnets  = module.vpc.public_subnets
-
-  security_groups = [module.alb_sg.security_group_id]
-
   enable_deletion_protection = false
 
-listeners = {
-  nexus = {
-    port     = 8081
-    protocol = "HTTP"
-    forward = {
-      target_group_key = "nex-tg"
+  security_group_ingress_rules = {
+    http = {
+      from_port   = 80
+      to_port     = 80
+      ip_protocol = "tcp"
+      description = "HTTP access to ALB"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
-  jenkins = {
-    port     = 8080
-    protocol = "HTTP"
-    forward = {
-      target_group_key = "jen-tg"
+  security_group_egress_rules = {
+    all = {
+      ip_protocol = "-1"
+      cidr_ipv4   = "10.0.0.0/16"
+    }
+  }
+
+  listeners = {
+    http = {
+      port     = 80
+      protocol = "HTTP"
+
+      forward = {
+        target_group_key = "nex-tgt"
+      }
+
+      rules = {
+        nexus = {
+          priority = 10
+
+          actions = [
+            {
+            forward = {
+              target_group_key = "nex-tgt"
+            }
+          }
+        ]
+
+          conditions = [
+            {
+              path_pattern = {
+                values = ["/", "/nexus*", "/repository*"]
+              }
+            }
+          ]
+        }
+
+        jenkins = {
+          priority = 20
+
+          actions = [
+            {
+              forward = {
+                target_group_key = "jen-tgt"
+              }
+            }
+          ]
+
+          conditions = [
+            {
+              path_pattern = {
+                values = ["/jenkins*", "/login*"]
+              }
+            }
+          ]
+      }
     }
   }
 }
-
   target_groups = {
-    nex-tg = {
+    nex-tgt = {
       name_prefix = "nex"
       port        = 8081
       protocol    = "HTTP"
@@ -125,7 +141,7 @@ listeners = {
         unhealthy_threshold = 2
       }
     }
-    jen-tg = {
+    jen-tgt = {
       name_prefix = "jen"
       port        = 8080
       protocol    = "HTTP"
@@ -151,13 +167,13 @@ listeners = {
 ########################## TARGET GROUPS ATTACHMENT ##########################################
 
 resource "aws_lb_target_group_attachment" "jenkins" {
-  target_group_arn = module.alb.target_groups["jen-tg"].arn
+  target_group_arn = module.alb.target_groups["jen-tgt"].arn
   target_id        = module.jenkins-server.id
   port             = 8080
 }
 
 resource "aws_lb_target_group_attachment" "nexus" {
-  target_group_arn = module.alb.target_groups["nex-tg"].arn
+  target_group_arn = module.alb.target_groups["nex-tgt"].arn
   target_id        = module.nexus-server.id
   port             = 8081
 }
@@ -303,7 +319,7 @@ module "nexus_sg" {
       from_port                = 8081
       to_port                  = 8081
       protocol                 = "tcp"
-      source_security_group_id = module.alb_sg.security_group_id
+      source_security_group_id = module.alb.security_group_id
       description              = "Nexus from ALB"
     },
     {
@@ -342,7 +358,7 @@ module "jenkins_sg" {
       from_port                = 8080
       to_port                  = 8080
       protocol                 = "tcp"
-      source_security_group_id = module.alb_sg.security_group_id
+      source_security_group_id = module.alb.security_group_id
       description              = "Jenkins from ALB"
     },
     {
