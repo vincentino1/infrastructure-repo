@@ -44,6 +44,7 @@ data "template_file" "tools_userdata" {
     bastion  = "bastion-host"
     jenkins  = "jenkins-server"
     nexus    = "nexus-server"
+    proxy    = "proxy-server"
     # db       = "db-server"
   }
 

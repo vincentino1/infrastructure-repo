@@ -92,6 +92,12 @@ variable "nexus_instance_type" {
   
 }
 
+variable "proxy_instance_type" {
+  type        = string
+  default     = "t3.medium"
+  description = "EC2 instance type for Nginx Proxy server"
+}
+
 variable "bastion_instance_type" {
   type        = string
   default     = "t3.nano"
@@ -148,15 +154,21 @@ variable "nexus_volume_size" {
   description = "Root volume size in GB"
 }
 
+variable "proxy_volume_size" {
+    type        = number
+    default     = 10
+    description = "Root volume size in GB"
+}
+
 # variable "db_volume_size" {
 #   type        = number
 #   description = "Root volume size in GB"
 #   default     = 50
 # }
 
-  variable "bastion_volume_size" {
+variable "bastion_volume_size" {
     type        = number
-    default     = 15
+    default     = 8
     description = "Root volume size in GB"
-  }
+}
     

@@ -1,5 +1,0 @@
-- name: Setup Nexus Repos
-  hosts: nexus_server
-  become: yes
-  roles:
-    - nexus_repos_setup

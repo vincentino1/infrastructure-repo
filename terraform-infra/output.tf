@@ -56,6 +56,16 @@ output "nexus_server_private_ip" {
   description = "The private IP address of the Nexus server"
 }
 
+output "proxy_server_pubic_ip" {
+  value       = module.proxy-server.public_ip 
+  description = "The public IP address of the proxy server"
+}
+
+output "proxy_server_private_ip" {
+  value       = module.proxy-server.private_ip 
+  description = "The public IP address of the proxy server"
+}
+
 # output "db_server_private_ip" {
 #   value       = module.db_server.private_ip
 #   description = "The private IP address of the database server"

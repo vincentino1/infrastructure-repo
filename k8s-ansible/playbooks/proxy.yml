@@ -1,0 +1,5 @@
+- name: Setup NGINX SSL termination for Nexus
+  hosts: proxy_server
+  become: yes
+  roles:
+    - proxy

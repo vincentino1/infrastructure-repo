@@ -1,0 +1,108 @@
+
+## Setup NGINX SSL termination for Nexus
+
+- name: Install required packages
+  apt:
+    name:
+      - nginx
+      - openjdk-11-jdk
+      - openssl
+    update_cache: yes
+
+- name: Create NGINX directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /etc/nginx/certs
+    - /etc/nginx/sites-available
+    - /etc/nginx/sites-enabled
+
+- name: Generate PKCS12 keystore
+  command: >
+    keytool -genkeypair
+    -keystore /etc/nginx/certs/nexus-keystore.p12
+    -storepass {{ keystore_pass }}
+    -keypass {{ keystore_pass }}
+    -alias {{ key_alias }}
+    -keyalg RSA
+    -keysize 2048
+    -validity 5000
+    -dname "CN={{ nexus_hostname }}, OU=DevOps, O=Local, L=Calgary, S=Alberta, C=CA"
+    -ext "SAN=DNS:{{ nexus_hostname }},IP:{{nexus_private_ip}}"
+    -ext "BC=ca:true"
+  args:
+    creates: /etc/nginx/certs/nexus-keystore.p12
+
+- name: Export public certificate
+  command: >
+    keytool -exportcert
+    -alias {{ key_alias }}
+    -keystore /etc/nginx/certs/nexus-keystore.p12
+    -storepass {{ keystore_pass }}
+    -rfc
+    -file /etc/nginx/certs/nexus.crt
+  args:
+    creates: /etc/nginx/certs/nexus.crt
+
+- name: Export private key
+  command: >
+    openssl pkcs12
+    -in /etc/nginx/certs/nexus-keystore.p12
+    -nocerts
+    -nodes
+    -passin pass:{{ keystore_pass }}
+    -out /etc/nginx/certs/nexus.key
+  args:
+    creates: /etc/nginx/certs/nexus.key
+
+- name: Set certificate permissions
+  file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/nginx/certs/nexus.key, mode: '0600' }
+    - { path: /etc/nginx/certs/nexus.crt, mode: '0644' }
+
+- name: Create NGINX site configuration
+  copy:
+    dest: /etc/nginx/sites-available/nexus.conf
+    content: |
+      server {
+          listen 443 ssl;
+          server_name {{ nexus_hostname }};
+
+          ssl_certificate /etc/nginx/certs/nexus.crt;
+          ssl_certificate_key /etc/nginx/certs/nexus.key;
+
+          client_max_body_size 0;
+
+          location / {
+            proxy_pass http://{{ nexus_private_ip }}:8081;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          }
+      }
+
+      server {
+          listen 80;
+          server_name {{ nexus_hostname }};
+          return 301 https://$host$request_uri;
+      }
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/nexus.conf
+    dest: /etc/nginx/sites-enabled/nexus.conf
+    state: link
+
+- name: Test NGINX configuration
+  command: nginx -t
+
+- name: Restart NGINX
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes

@@ -1,0 +1,4 @@
+    nexus_private_ip: "10.0.10.16"          # Replace with your Nexus private IP
+    nexus_hostname: "35-183-125-15.sslip.io" # Replace with your public DNS, i.e nginx DNS
+    keystore_pass: "changeit"
+    key_alias: "nexus"

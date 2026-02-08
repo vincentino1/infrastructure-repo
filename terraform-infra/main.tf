@@ -176,16 +176,26 @@ module "nexus_sg" {
       description = "Docker Registry"
       cidr_blocks = var.vpc_cidr
     }, 
+    # {
+    #   from_port                = 8081
+    #   to_port                  = 8081
+    #   protocol                 = "tcp"
+    #   description              = "Nexus"
+    #   cidr_blocks = var.vpc_cidr
+    # }
+  ]
+  
+  ingress_with_source_security_group_id = [
+    
     {
       from_port                = 8081
       to_port                  = 8081
       protocol                 = "tcp"
-      description              = "Nexus"
-      cidr_blocks = var.vpc_cidr
-    }
-  ]
-  
-  ingress_with_source_security_group_id = [
+      description              = "Nexus acces from Nginx proxy server "
+      source_security_group_id = module.proxy_sg.security_group_id
+      
+    },
+    
     {
       from_port                = 22
       to_port                  = 22
@@ -249,7 +259,58 @@ module "jenkins_sg" {
   tags = merge(var.tags, {
     Name = "${var.environment}-jenkins-sg"
   })
+}
 
+
+#---------------------Proxy SG ----------------------
+module "proxy_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 5.3"
+
+  name        = "${var.environment}-proxy-sg"
+  description = "Security group for proxy server"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_with_cidr_blocks = [
+      {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      description = "proxy"
+      cidr_blocks = "0.0.0.0/0"
+      },
+     
+      {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      description = "proxy"
+      cidr_blocks = "0.0.0.0/0"
+      }
+
+    ]
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = 22
+      to_port                  = 22
+      protocol                 = "tcp"
+      description              = "SSH from bastion"
+      source_security_group_id = module.bastion_sg.security_group_id
+    }
+  ]
+
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      description = "Allow all outbound traffic"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ] 
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-proxy-sg"
+  })
 }
 
 # ---------------------- DB SG ----------------------
@@ -451,6 +512,37 @@ module "nexus-server" {
     var.tags,
     {
       Role        = "Nexus-server"
+    }
+  )
+}
+
+module "proxy-server" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "6.2.0"
+
+  name                   = "${var.environment}-proxy-server"
+  instance_type          = var.proxy_instance_type
+  ami                    = data.aws_ami.ubuntu.id 
+  key_name               = var.ssh_key_name      
+  vpc_security_group_ids = [module.proxy_sg.security_group_id]
+  monitoring             = true
+  subnet_id              = module.vpc.public_subnets[1]
+  user_data              = data.template_file.tools_userdata["proxy"].rendered
+
+  disable_api_termination = false #Allow termination
+  metadata_options = {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+  root_block_device = {
+    encrypted   = true
+    volume_type = "gp3"
+    volume_size = var.proxy_volume_size
+  }
+  tags = merge(
+    var.tags,
+    {
+      Role        = "proxy-server"
     }
   )
 }
