@@ -21,9 +21,9 @@
 
 - name: Download latest Nexus Repository Manager 3 
   get_url: 
-  url: "https://download.sonatype.com/nexus/3/latest-unix.tar.gz" 
-  dest: /opt/nexus/nexus-latest-unix.tar.gz 
-  mode: '0644'
+    url: "https://download.sonatype.com/nexus/3/latest-unix.tar.gz" 
+    dest: /opt/nexus/nexus-latest-unix.tar.gz 
+    mode: '0644'
 
 - name: Extract Nexus
   unarchive:
