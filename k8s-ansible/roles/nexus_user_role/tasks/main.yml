@@ -8,6 +8,16 @@
     developer_password: "{{ your_developer_password }}" # ← Input: e.g., ChangeMeSecure123! (Vault recommended)
     developer_email: "{{ your_developer_email }}" # ← Input: e.g., myapp-developer@yourcompany.com
 
+- name: Check if role myapp-developer already exists
+  ansible.builtin.uri:
+    url: "http://localhost:8081/service/rest/v1/security/roles/myapp-developer"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+  register: myapp_role
+
 - name: Create role 'myapp-developer' with read and deploy permissions
   ansible.builtin.uri:
     url: "http://localhost:8081/service/rest/v1/security/roles"
@@ -35,13 +45,23 @@
         ],
         "roles": []
       }
-    status_code: [201, 400]
+    status_code: [201]
     force_basic_auth: true
-  ignore_errors: true
+  when: myapp_role.status == 404
+
+- name: Check if developer user already exists
+  ansible.builtin.uri:
+    url: "http://localhost:8081/service/rest/v1/security/users/{{ developer_username }}"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+  register: dev_user
 
 - name: Create dedicated developer user
   ansible.builtin.uri:
-    url: "http://{{nexus_ip}}:8081/service/rest/v1/security/users"
+    url: "http://localhost:8081/service/rest/v1/security/users"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -59,11 +79,11 @@
         "roles": ["myapp-developer"],
         "password": "{{ developer_password }}"
       }
-    status_code: [201, 400]
+    status_code: [201]
     force_basic_auth: true
+  when: dev_user.status == 404  
   register: user_creation
-  changed_when: user_creation.status == 201
-  ignore_errors: true
+  changed_when: dev_user.status == 404
 
 - name: Warn about initial password
   ansible.builtin.debug:
