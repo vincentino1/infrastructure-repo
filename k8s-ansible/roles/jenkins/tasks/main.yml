@@ -25,7 +25,7 @@
   apt:
     name:
       - fontconfig
-      - openjdk-21-jre
+      - openjdk-21-jdk
     state: present
 
 - name: Install Jenkins

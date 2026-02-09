@@ -1,0 +1,22 @@
+- name: Create Docker certs directory for registry
+  ansible.builtin.file:
+    path: "{{ docker_certs_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Copy cert to Docker trust store (as ca.crt)
+  ansible.builtin.copy:
+    src: "{{ cert_src }}"
+    dest: "{{ docker_certs_dir }}/ca.crt"
+    mode: "0644"
+
+- name: Restart Docker service to apply trust
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+
+- name: Verify Docker can access registry
+  ansible.builtin.command: docker login {{ registry_domain }} -u "{{ your_developer_username }}" -p "{{ your_developer_password }}" # ← Inputs from Step 3
+  register: login_result
+  ignore_errors: true
+  changed_when: false

@@ -1,0 +1,71 @@
+---
+- name: Set variables for security configuration
+  ansible.builtin.set_fact:
+    nexus_admin_user: "admin"
+    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}" # ← From Step 1
+    repo_prefix: "myapp-"
+    developer_username: "{{ your_developer_username }}" # ← Input: e.g., myapp-developer
+    developer_password: "{{ your_developer_password }}" # ← Input: e.g., ChangeMeSecure123! (Vault recommended)
+    developer_email: "{{ your_developer_email }}" # ← Input: e.g., myapp-developer@yourcompany.com
+
+- name: Create role 'myapp-developer' with read and deploy permissions
+  ansible.builtin.uri:
+    url: "http://localhost:8081/service/rest/v1/security/roles"
+    method: POST
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    body_format: json
+    body: |
+      {
+        "id": "myapp-developer",
+        "name": "MyApp Developer",
+        "description": "Can pull from all myapp-* repositories and push to hosted ones",
+        "source": "default",
+        "privileges": [
+          "nx-repository-view-{{ repo_prefix }}maven-*-browse", "nx-repository-view-{{ repo_prefix }}maven-*-read",
+          "nx-repository-view-{{ repo_prefix }}npm-*-browse", "nx-repository-view-{{ repo_prefix }}npm-*-read",
+          "nx-repository-view-{{ repo_prefix }}pypi-*-browse", "nx-repository-view-{{ repo_prefix }}pypi-*-read",
+          "nx-repository-view-{{ repo_prefix }}docker-*-browse", "nx-repository-view-{{ repo_prefix }}docker-*-read",
+          "nx-repository-view-{{ repo_prefix }}maven-hosted-*-add", "nx-repository-view-{{ repo_prefix }}maven-hosted-*-edit",
+          "nx-repository-view-{{ repo_prefix }}npm-hosted-*-add", "nx-repository-view-{{ repo_prefix }}npm-hosted-*-edit",
+          "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-add", "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-edit",
+          "nx-repository-view-{{ repo_prefix }}docker-hosted-*-add", "nx-repository-view-{{ repo_prefix }}docker-hosted-*-edit",
+          "nx-repository-view-{{ repo_prefix }}maven-hosted-*-delete", "nx-repository-view-{{ repo_prefix }}npm-hosted-*-delete",
+          "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-delete", "nx-repository-view-{{ repo_prefix }}docker-hosted-*-delete"
+        ],
+        "roles": []
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
+  ignore_errors: true
+
+- name: Create dedicated developer user
+  ansible.builtin.uri:
+    url: "http://localhost:8081/service/rest/v1/security/users"
+    method: POST
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    body_format: json
+    body: |
+      {
+        "userId": "{{ developer_username }}",
+        "firstName": "MyApp",
+        "lastName": "Developer",
+        "emailAddress": "{{ developer_email }}",
+        "source": "default",
+        "status": "active",
+        "readOnly": false,
+        "externalRoles": [],
+        "roles": ["myapp-developer"],
+        "password": "{{ developer_password }}"
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
+  register: user_creation
+  changed_when: user_creation.status == 201
+  ignore_errors: true
+
+- name: Warn about initial password
+  ansible.builtin.debug:
+    msg: "New user '{{ developer_username }}' created. Initial password: {{ developer_password }} → Change immediately!"
+  when: user_creation.changed

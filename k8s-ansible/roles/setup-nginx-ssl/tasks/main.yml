@@ -29,8 +29,8 @@
     -keyalg RSA
     -keysize 2048
     -validity 730
-    -dname "CN={{ nexus_hostname }}, OU=DevOps, O=Local, L=Calgary, S=Alberta, C=CA"
-    -ext "SAN=DNS:{{ nexus_hostname }},IP:{{ nexus_private_ip }}"
+    -dname "CN={{ registry_domain }}, OU=DevOps, O=Local, L=Calgary, S=Alberta, C=CA"
+    -ext "SAN=DNS:{{ registry_domain }},IP:{{ nexus_private_ip }}"
   args:
     creates: /etc/nginx/certs/nexus-keystore.p12
   register: keystore_generation

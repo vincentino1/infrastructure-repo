@@ -1,74 +1,86 @@
-- name: Install Java for Nexus
-  apt:
-    name: openjdk-17-jdk
+---
+- name: Install Java
+  ansible.builtin.apt:
+    name: openjdk-11-jdk
     state: present
     update_cache: yes
 
-- name: Create Nexus base directory
-  ansible.builtin.file:
-    path: /opt/nexus
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Create nexus user
-  user:
+- name: Create nexus system user
+  ansible.builtin.user:
     name: nexus
     system: yes
     shell: /bin/bash
     create_home: no
+    state: present
 
-- name: Download Nexus Repository tarball
+- name: Download Nexus tarball
   ansible.builtin.get_url:
-    url: https://download.sonatype.com/nexus/3/nexus-3.89.0-01-unix.tar.gz   # ← replace xx with the actual patch from the site
-    dest: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
-    mode: '0644'
+    url: https://download.sonatype.com/nexus/3/nexus-3.70.0-01-unix.tar.gz
+    dest: /tmp/nexus.tar.gz
+    mode: "0644"
 
-- name: Extract Nexus
-  unarchive:
-    src: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
-    dest: /opt/nexus
+- name: Extract Nexus to /opt
+  ansible.builtin.unarchive:
+    src: /tmp/nexus.tar.gz
+    dest: /opt
     remote_src: yes
+    creates: /opt/nexus-3.
+    owner: nexus
+    group: nexus
 
-- name: Create symlink
-  file:
-    src: /opt/nexus/nexus-3.89.0-01
-    dest: /opt/nexus/current
+- name: Find the actual Nexus directory
+  ansible.builtin.find:
+    paths: /opt
+    patterns: "nexus-3.*"
+    file_type: directory
+  register: nexus_dirs
+
+- name: Set fact for Nexus home
+  ansible.builtin.set_fact:
+    nexus_home: "{{ nexus_dirs.files | map(attribute='path') | first }}"
+
+- name: Create symlink /opt/nexus → current version
+  ansible.builtin.file:
+    src: "{{ nexus_home }}"
+    dest: /opt/nexus
     state: link
     force: yes
+    owner: nexus
+    group: nexus
 
-- name: Fix Nexus directory permissions
-  file:
-    path: /opt/nexus
+- name: Ensure sonatype-work is owned by nexus
+  ansible.builtin.file:
+    path: /opt/sonatype-work
     state: directory
     owner: nexus
     group: nexus
     recurse: yes
 
-- name: Configure Nexus run user
-  lineinfile:
-    path: /opt/nexus/current/bin/nexus.rc
-    regexp: '^#?run_as_user='
-    line: 'run_as_user="nexus"'
+- name: Configure run_as_user (create nexus.rc if missing)
+  ansible.builtin.copy:
+    dest: /opt/nexus/bin/nexus.rc
+    content: |
+      run_as_user="nexus"
+    mode: "0644"
+    owner: nexus
+    group: nexus
 
-- name: Create Nexus systemd service
-  copy:
+- name: Create Nexus systemd service file
+  ansible.builtin.copy:
     dest: /etc/systemd/system/nexus.service
-    mode: '0644'
+    mode: "0644"
     content: |
       [Unit]
-      Description=Nexus Repository Manager
+      Description=Sonatype Nexus Repository Manager
       After=network.target
 
       [Service]
       Type=forking
       LimitNOFILE=65536
-      ExecStart=/bin/bash /opt/nexus/current/bin/nexus start
-      ExecStop=/bin/bash /opt/nexus/current/bin/nexus stop
+      ExecStart=/opt/nexus/bin/nexus start
+      ExecStop=/opt/nexus/bin/nexus stop
       User=nexus
       Group=nexus
-      WorkingDirectory=/opt/nexus
       Restart=on-abort
       TimeoutSec=600
 
@@ -76,31 +88,30 @@
       WantedBy=multi-user.target
 
 - name: Reload systemd daemon
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: yes
 
-- name: Start Nexus
-  systemd:
+- name: Enable and start Nexus service
+  ansible.builtin.systemd:
     name: nexus
-    state: started
     enabled: yes
+    state: started
 
-- name: Wait for Nexus to start
-  wait_for:
+- name: Wait for Nexus to become available on port 8081
+  ansible.builtin.wait_for:
     port: 8081
     delay: 30
     timeout: 300
+    state: started
 
-- name: Wait for admin password file
-  wait_for:
-    path: /opt/nexus/sonatype-work/nexus3/admin.password
-    timeout: 300
-
-- name: Get Nexus admin password
-  command: cat /opt/nexus/sonatype-work/nexus3/admin.password
+- name: Read initial admin password
+  ansible.builtin.command: cat /opt/sonatype-work/nexus3/admin.password
   register: nexus_password
   changed_when: false
+  failed_when: false
+  when: (ansible.builtin.stat(path='/opt/sonatype-work/nexus3/admin.password')).stat.exists
 
-- name: Display Nexus password
-  debug:
-    msg: "Nexus initial password: {{ nexus_password.stdout }}"
+- name: Display initial Nexus admin password
+  ansible.builtin.debug:
+    msg: "Nexus initial admin password: {{ nexus_password.stdout | trim }}"
+  when: nexus_password.stdout is defined and nexus_password.stdout | length > 0

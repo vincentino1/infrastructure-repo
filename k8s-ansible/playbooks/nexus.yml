@@ -2,4 +2,6 @@
   hosts: nexus_server
   become: yes
   roles:
-    - nexus
+    - nexus # Install Sonatype Nexus Repository OSS
+    - nexus_repos # Create Repositories in Nexus
+    - nexus_user_role # create user & roles
