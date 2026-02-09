@@ -18,7 +18,7 @@
     url: https://download.sonatype.com/nexus/3/nexus-3.89.0-02-unix.tar.gz
     dest: /tmp/nexus.tar.gz
     mode: "0644"
-    checksum: sha256:https://download.sonatype.com/nexus/3/nexus-3.89.0-02-unix.tar.gz.sha256
+    checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
 - name: Extract Nexus to /opt
   ansible.builtin.unarchive:
     src: /tmp/nexus.tar.gz
