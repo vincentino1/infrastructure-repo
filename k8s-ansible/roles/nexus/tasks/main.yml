@@ -75,4 +75,4 @@
 - name: Display Nexus password
   debug:
     msg: "Nexus initial password: {{ nexus_password.stdout }}"
-    when: nexus_password.stdout is defined
+  when: nexus_password.stdout is defined
