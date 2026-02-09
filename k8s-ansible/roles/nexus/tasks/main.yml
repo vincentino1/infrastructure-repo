@@ -104,14 +104,12 @@
     timeout: 300
     state: started
 
-- name: Read initial admin password
-  ansible.builtin.command: cat /opt/sonatype-work/nexus3/admin.password
+- name: Get Nexus admin password
+  command: cat /opt/sonatype-work/nexus3/admin.password
   register: nexus_password
-  changed_when: false
-  failed_when: false
-  when: (ansible.builtin.stat(path='/opt/sonatype-work/nexus3/admin.password')).stat.exists
+  ignore_errors: yes
 
-- name: Display initial Nexus admin password
-  ansible.builtin.debug:
-    msg: "Nexus initial admin password: {{ nexus_password.stdout | trim }}"
-  when: nexus_password.stdout is defined and nexus_password.stdout | length > 0
+- name: Display Nexus password
+  debug:
+    msg: "Nexus initial password: {{ nexus_password.stdout }}"
+    when: nexus_password.stdout is defined
