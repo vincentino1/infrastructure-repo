@@ -21,23 +21,21 @@
 
 - name: Download Nexus
   get_url:
-    url:  https://download.sonatype.com/nexus/3/nexus-3.89.0-01-unix.tar.gz
-    dest: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
+    url:  https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    dest: /opt/nexus/latest-nexus-unix.tar.gz
     checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
     mode: '0644'
-    owner: root
-    group: root
 
 - name: Extract Nexus
   unarchive:
-    src: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
+    src: /opt/nexus/latest-nexus-unix.tar.gz
     dest: /opt/nexus
     remote_src: yes
-    creates: /opt/nexus/nexus-3.89.0-01
+    creates: /opt/nexus/nexus-3.89.0-09
 
 - name: Create symlink
   file:
-    src: /opt/nexus/nexus-3.89.0-01
+    src: /opt/nexus/nexus-3.89.0-09
     dest: /opt/nexus/current
     state: link
     force: yes
