@@ -4,48 +4,60 @@
     state: present
     update_cache: yes
 
+- name: Create Nexus base directory
+  file:
+    path: /opt/nexus
+    state: directory
+    owner: nexus
+    group: nexus
+    mode: '0755'
+
 - name: Create nexus user
   user:
     name: nexus
     system: yes
     shell: /bin/bash
-    create_home: yes
+    create_home: no
 
 - name: Download Nexus
   get_url:
-    url: https://download.sonatype.com/nexus/3/nexus-unix-x86-64-3.79.0-09.tar.gz
-    dest: /tmp/nexus.tar.gz
+    url:  https://download.sonatype.com/nexus/3/nexus-3.89.0-01-unix.tar.gz
+    dest: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
+    checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
+    mode: '0644'
 
 - name: Extract Nexus
   unarchive:
-    src: /tmp/nexus.tar.gz
-    dest: /opt
+    src: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
+    dest: /opt/nexus
     remote_src: yes
-
-- name: Fix Nexus directory permissions
-  file:
-    path: /opt/nexus-3.79.0-09
-    owner: nexus
-    group: nexus
-    recurse: yes
-
-- name: Fix Nexus data directory permissions
-  file:
-    path: /opt/sonatype-work
-    owner: nexus
-    group: nexus
-    recurse: yes
+    creates: /opt/nexus/nexus-3.89.0-01
 
 - name: Create symlink
   file:
-    src: /opt/nexus-3.79.0-09
-    dest: /opt/nexus
+    src: /opt/nexus/nexus-3.89.0-01
+    dest: /opt/nexus/current
     state: link
     force: yes
+
+- name: Fix Nexus directory permissions
+  file:
+    path: /opt/nexus
+    state: directory
+    owner: nexus
+    group: nexus
+    recurse: yes
+
+- name: Configure Nexus run user
+  lineinfile:
+    path: /opt/nexus/current/bin/nexus.rc
+    regexp: '^#?run_as_user='
+    line: 'run_as_user="nexus"'
 
 - name: Create Nexus systemd service
   copy:
     dest: /etc/systemd/system/nexus.service
+    mode: '0644'
     content: |
       [Unit]
       Description=Nexus Repository Manager
@@ -54,21 +66,26 @@
       [Service]
       Type=forking
       LimitNOFILE=65536
-      ExecStart=/bin/bash /opt/nexus/bin/nexus start
-      ExecStop=/bin/bash /opt/nexus/bin/nexus stop
+      ExecStart=/bin/bash /opt/nexus/current/bin/nexus start
+      ExecStop=/bin/bash /opt/nexus/current/bin/nexus stop
       User=nexus
+      Group=nexus
       WorkingDirectory=/opt/nexus
       Restart=on-abort
+      TimeoutSec=600
 
       [Install]
       WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
 
 - name: Start Nexus
   systemd:
     name: nexus
     state: started
     enabled: yes
-    daemon_reload: yes
 
 - name: Wait for Nexus to start
   wait_for:
@@ -78,12 +95,13 @@
 
 - name: Wait for admin password file
   wait_for:
-    path: /opt/sonatype-work/nexus3/admin.password
+    path: /opt/nexus/sonatype-work/nexus3/admin.password
     timeout: 300
 
 - name: Get Nexus admin password
-  command: cat /opt/sonatype-work/nexus3/admin.password
+  command: cat /opt/nexus/sonatype-work/nexus3/admin.password
   register: nexus_password
+  changed_when: false
 
 - name: Display Nexus password
   debug:
