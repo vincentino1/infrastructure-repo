@@ -15,10 +15,10 @@
 
 - name: Download Nexus tarball
   ansible.builtin.get_url:
-    url: https://download.sonatype.com/nexus/3/nexus-3.89.0-09-unix.tar.gz
+    url: https://download.sonatype.com/nexus/3/nexus-3.89.0-unix.tar.gz
     dest: /tmp/nexus.tar.gz
     mode: "0644"
-    checksum: sha256:https://download.sonatype.com/nexus/3/nexus-3.89.0-09-unix.tar.gz.sha256
+    checksum: sha256:https://download.sonatype.com/nexus/3/nexus-3.89.0-unix.tar.gz.sha256
 
 - name: Extract Nexus to /opt
   ansible.builtin.unarchive:
