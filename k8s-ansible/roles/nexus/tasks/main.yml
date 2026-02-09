@@ -19,12 +19,11 @@
     shell: /bin/bash
     create_home: no
 
-- name: Download Nexus
-  get_url:
-    url:  https://download.sonatype.com/nexus/3/nexus-3.89.0-unix.tar.gz
-    dest: /opt/nexus/nexus-3.89.0-unix.tar.gz
-    checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
-    mode: '0644'
+- name: Download latest Nexus Repository Manager 3 
+  get_url: 
+  url: "https://download.sonatype.com/nexus/3/latest-unix.tar.gz" 
+  dest: /opt/nexus/nexus-latest-unix.tar.gz 
+  mode: '0644'
 
 - name: Extract Nexus
   unarchive:
