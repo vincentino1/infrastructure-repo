@@ -5,11 +5,11 @@
     update_cache: yes
 
 - name: Create Nexus base directory
-  file:
+  ansible.builtin.file:
     path: /opt/nexus
     state: directory
-    owner: nexus
-    group: nexus
+    owner: root
+    group: root
     mode: '0755'
 
 - name: Create nexus user
@@ -25,6 +25,8 @@
     dest: /opt/nexus/nexus-3.89.0-01-unix.tar.gz
     checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
     mode: '0644'
+    owner: root
+    group: root
 
 - name: Extract Nexus
   unarchive:
