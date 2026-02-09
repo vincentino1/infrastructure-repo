@@ -1,3 +1,4 @@
 your_developer_username: jenkins
 your_developer_password: jenkins123
 your_developer_email: myapp-developer@test.com
+nexus_ip: 10.0.10.212

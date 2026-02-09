@@ -41,7 +41,7 @@
 
 - name: Create dedicated developer user
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/users"
+    url: "http://{{nexus_ip}}:8081/service/rest/v1/security/users"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
