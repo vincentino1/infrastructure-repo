@@ -1,14 +1,14 @@
 ---
-- name: Set variables for security configuration
+- name: Set variables for Nexus security configuration
   ansible.builtin.set_fact:
     nexus_admin_user: "admin"
-    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}" # ← From Step 1
-    repo_prefix: "myapp-"
-    developer_username: "{{ your_developer_username }}" # ← Input: e.g., myapp-developer
-    developer_password: "{{ your_developer_password }}" # ← Input: e.g., ChangeMeSecure123! (Vault recommended)
-    developer_email: "{{ your_developer_email }}" # ← Input: e.g., myapp-developer@yourcompany.com
+    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}" 
+    repo_prefix: "myapp-"                                               
+    developer_username: "{{ your_developer_username | default('myapp-developer') }}"
+    developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"  # Use Ansible Vault!
+    developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
 
-- name: Check if role myapp-developer already exists
+- name: Check if role 'myapp-developer' already exists
   ansible.builtin.uri:
     url: "http://localhost:8081/service/rest/v1/security/roles/myapp-developer"
     method: GET
@@ -16,9 +16,11 @@
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     status_code: [200, 404]
-  register: myapp_role
+    return_content: yes
+  register: role_check
+  changed_when: false
 
-- name: Create role 'myapp-developer' with read and deploy permissions
+- name: Create role 'myapp-developer' (read from all repos + deploy to hosted)
   ansible.builtin.uri:
     url: "http://localhost:8081/service/rest/v1/security/roles"
     method: POST
@@ -29,25 +31,24 @@
       {
         "id": "myapp-developer",
         "name": "MyApp Developer",
-        "description": "Can pull from all myapp-* repositories and push to hosted ones",
+        "description": "Read/browse all repositories (including myapp-*), push/edit/delete to hosted repositories",
         "source": "default",
         "privileges": [
-          "nx-repository-view-{{ repo_prefix }}maven-*-browse", "nx-repository-view-{{ repo_prefix }}maven-*-read",
-          "nx-repository-view-{{ repo_prefix }}npm-*-browse", "nx-repository-view-{{ repo_prefix }}npm-*-read",
-          "nx-repository-view-{{ repo_prefix }}pypi-*-browse", "nx-repository-view-{{ repo_prefix }}pypi-*-read",
-          "nx-repository-view-{{ repo_prefix }}docker-*-browse", "nx-repository-view-{{ repo_prefix }}docker-*-read",
-          "nx-repository-view-{{ repo_prefix }}maven-hosted-*-add", "nx-repository-view-{{ repo_prefix }}maven-hosted-*-edit",
-          "nx-repository-view-{{ repo_prefix }}npm-hosted-*-add", "nx-repository-view-{{ repo_prefix }}npm-hosted-*-edit",
-          "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-add", "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-edit",
-          "nx-repository-view-{{ repo_prefix }}docker-hosted-*-add", "nx-repository-view-{{ repo_prefix }}docker-hosted-*-edit",
-          "nx-repository-view-{{ repo_prefix }}maven-hosted-*-delete", "nx-repository-view-{{ repo_prefix }}npm-hosted-*-delete",
-          "nx-repository-view-{{ repo_prefix }}pypi-hosted-*-delete", "nx-repository-view-{{ repo_prefix }}docker-hosted-*-delete"
+          "nx-repository-view-*-browse",               
+          "nx-repository-view-*-read",                 
+
+          # Deploy privileges - applies to hosted repos (Nexus enforces type internally)
+          "nx-repository-view-*-add",                 
+          "nx-repository-view-*-edit",                 
+          "nx-repository-view-*-delete"                
         ],
         "roles": []
       }
     status_code: [201]
     force_basic_auth: true
-  when: myapp_role.status == 404
+    return_content: yes
+  when: role_check.status == 404
+  register: role_creation
 
 - name: Check if developer user already exists
   ansible.builtin.uri:
@@ -57,9 +58,11 @@
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     status_code: [200, 404]
-  register: dev_user
+    return_content: yes
+  register: user_check
+  changed_when: false
 
-- name: Create dedicated developer user
+- name: Create dedicated developer user and assign role
   ansible.builtin.uri:
     url: "http://localhost:8081/service/rest/v1/security/users"
     method: POST
@@ -81,11 +84,15 @@
       }
     status_code: [201]
     force_basic_auth: true
-  when: dev_user.status == 404  
+    return_content: yes
+  when: user_check.status == 404
   register: user_creation
-  changed_when: dev_user.status == 404
+  changed_when: user_check.status == 404
 
-- name: Warn about initial password
+- name: Warn about new user credentials (change password immediately!)
   ansible.builtin.debug:
-    msg: "New user '{{ developer_username }}' created. Initial password: {{ developer_password }} → Change immediately!"
+    msg: >
+      New user '{{ developer_username }}' was created.
+      Initial password: {{ developer_password }}
+      → Change it immediately via UI or API!
   when: user_creation.changed
