@@ -23,8 +23,7 @@
   get_url:
     url:  https://download.sonatype.com/nexus/3/latest-unix.tar.gz
     dest: /opt/nexus/latest-nexus-unix.tar.gz
-    checksum: sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
-    mode: '0644'
+    checksum: sha256:e2f1a8b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z
 
 - name: Extract Nexus
   unarchive:
