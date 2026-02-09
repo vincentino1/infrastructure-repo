@@ -19,21 +19,21 @@
     shell: /bin/bash
     create_home: no
 
-- name: Download latest Nexus Repository Manager 3 
-  get_url: 
-    url: "https://download.sonatype.com/nexus/3/latest-unix.tar.gz" 
-    dest: /opt/nexus/nexus-latest-unix.tar.gz 
+- name: Download Nexus Repository tarball
+  ansible.builtin.get_url:
+    url: https://download.sonatype.com/nexus/3/nexus-3.89.0-09-unix.tar.gz   # ← replace xx with the actual patch from the site
+    dest: /opt/nexus/nexus-3.89.0-09-unix.tar.gz
     mode: '0644'
 
 - name: Extract Nexus
   unarchive:
-    src: /opt/nexus/nexus-3.89.0-unix.tar.gz
+    src: /opt/nexus/nexus-3.89.0-09-unix.tar.gz
     dest: /opt/nexus
     remote_src: yes
 
 - name: Create symlink
   file:
-    src: /opt/nexus/nexus-3.89.0
+    src: /opt/nexus/nexus-3.89.0-09
     dest: /opt/nexus/current
     state: link
     force: yes
