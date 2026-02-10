@@ -5,6 +5,10 @@ server {
     ssl_certificate /etc/nginx/certs/nexus.crt;
     ssl_certificate_key /etc/nginx/certs/nexus.key;
 
+
+    # Add this line to increase the limit to 50MB
+    client_max_body_size 50M;
+
     location / {
         proxy_pass http://{{nexus_server_ip}}:8081/;
         proxy_set_header Host $host;

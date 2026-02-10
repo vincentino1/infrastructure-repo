@@ -48,6 +48,9 @@
         - "nx-repository-view-npm-myapp-npm-group-browse"
         - "nx-repository-view-docker-myapp-docker-hosted-read"
         - "nx-repository-view-docker-myapp-docker-hosted-browse"
+        - "nx-repository-view-docker-myapp-docker-hosted-add"
+        - "nx-repository-view-docker-myapp-docker-hosted-edit"
+        - "nx-repository-view-docker-myapp-docker-hosted-delete"
         - "nx-repository-view-docker-myapp-docker-proxy-read"
         - "nx-repository-view-docker-myapp-docker-proxy-browse"
         - "nx-repository-view-docker-myapp-docker-group-read"
@@ -62,7 +65,9 @@
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/users"
     method: GET
-    user: "{{ nexus_admin_user }}"
+    user: "{{ nexus_admin_user }}":q!
+
+    
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     status_code: 200
