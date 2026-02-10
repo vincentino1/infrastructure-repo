@@ -183,7 +183,7 @@
 
 - name: Create myapp-docker-proxy
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/docker/proxy"
+    url: "{{ nexus_api_url }}/repositories/docker/proxy"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
