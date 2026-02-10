@@ -2,15 +2,16 @@
 - name: Set variables for Nexus security configuration
   ansible.builtin.set_fact:
     nexus_admin_user: "admin"
-    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}" 
-    repo_prefix: "myapp-"                                               
-    developer_username: "{{ your_developer_username | default('myapp-developer') }}"
-    developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"  # Use Ansible Vault!
+    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}"
+    repo_prefix: "myapp-"
+    developer_username: "{{ your_developer_username | default('myapp-developer-role') }}"
+    developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"
     developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
+    nexus_api: "http://{{ nexus_host }}:8081/service/rest/v1"
 
-- name: Check if role 'myapp-developer' already exists
+- name: Check if role 'myapp-developer-role' exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_base_url }}/service/rest/v1/security/roles/myapp-developer"
+    url: "{{ nexus_api }}/security/roles/myapp-developer-role"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -20,44 +21,43 @@
   register: role_check
   changed_when: false
 
-- name: Create role 'myapp-developer'
+- name: Create role 'myapp-developer-role'
   ansible.builtin.uri:
-    url: "{{ nexus_base_url }}/service/rest/v1/security/roles"
+    url: "{{ nexus_api }}/security/roles"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    body_format: json
-    body: >-
-      {
-        "id": "myapp-developer",
-        "name": "MyApp Developer",
-        "description": "Read/browse all repositories, push to hosted repositories",
-        "source": "default",
-        "privileges": [
-          "nx-repository-view-*-browse",
-          "nx-repository-view-*-read",
-          "nx-repository-view-maven2-myapp-maven-hosted-add",
-          "nx-repository-view-maven2-myapp-maven-hosted-edit",
-          "nx-repository-view-maven2-myapp-maven-hosted-delete",
-          "nx-repository-view-npm-myapp-npm-hosted-add",
-          "nx-repository-view-npm-myapp-npm-hosted-edit",
-          "nx-repository-view-npm-myapp-npm-hosted-delete",
-          "nx-repository-view-pypi-myapp-pypi-hosted-add",
-          "nx-repository-view-pypi-myapp-pypi-hosted-edit",
-          "nx-repository-view-pypi-myapp-pypi-hosted-delete",
-          "nx-repository-view-docker-myapp-docker-hosted-add",
-          "nx-repository-view-docker-myapp-docker-hosted-edit",
-          "nx-repository-view-docker-myapp-docker-hosted-delete"
-        ],
-        "roles": []
-      }
-    status_code: [201]
     force_basic_auth: true
+    body_format: json
+    body:
+      id: "myapp-developer-role"
+      name: "MyApp Developer"
+      description: "Read/browse all repositories, push to hosted repositories"
+      source: "default"
+      privileges:
+        - "nx-repository-view-*-browse"
+        - "nx-repository-view-*-read"
+        # Add repo-specific privileges ONLY if repos exist
+        - "nx-repository-view-maven2-myapp-maven-hosted-add"
+        - "nx-repository-view-maven2-myapp-maven-hosted-edit"
+        - "nx-repository-view-maven2-myapp-maven-hosted-delete"
+        - "nx-repository-view-npm-myapp-npm-hosted-add"
+        - "nx-repository-view-npm-myapp-npm-hosted-edit"
+        - "nx-repository-view-npm-myapp-npm-hosted-delete"
+        - "nx-repository-view-pypi-myapp-pypi-hosted-add"
+        - "nx-repository-view-pypi-myapp-pypi-hosted-edit"
+        - "nx-repository-view-pypi-myapp-pypi-hosted-delete"
+        - "nx-repository-view-docker-myapp-docker-hosted-add"
+        - "nx-repository-view-docker-myapp-docker-hosted-edit"
+        - "nx-repository-view-docker-myapp-docker-hosted-delete"
+      roles: []
+    status_code: 201
+    return_content: yes
   when: role_check.status == 404
-  
-- name: Check if developer user already exists
+
+- name: Check if developer user exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_base_url }}/service/rest/v1/security/users/{{ developer_username }}"
+    url: "{{ nexus_api }}/security/users/{{ developer_username }}"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -67,37 +67,98 @@
   register: user_check
   changed_when: false
 
-- name: Create dedicated developer user and assign role
+- name: Create developer user and assign role
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/users"
+    url: "{{ nexus_api }}/security/users"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    body_format: json
-    body: |
-      {
-        "userId": "{{ developer_username }}",
-        "firstName": "MyApp",
-        "lastName": "Developer",
-        "emailAddress": "{{ developer_email }}",
-        "source": "default",
-        "status": "active",
-        "readOnly": false,
-        "externalRoles": [],
-        "roles": ["myapp-developer"],
-        "password": "{{ developer_password }}"
-      }
-    status_code: [201]
     force_basic_auth: true
+    body_format: json
+    body:
+      userId: "{{ developer_username }}"
+      firstName: "MyApp"
+      lastName: "Developer"
+      emailAddress: "{{ developer_email }}"
+      source: "default"
+      status: "active"
+      readOnly: false
+      externalRoles: []
+      roles:
+        - "myapp-developer-role"
+      password: "{{ developer_password }}"
+    status_code: 201
     return_content: yes
   when: user_check.status == 404
   register: user_creation
   changed_when: user_check.status == 404
 
-- name: Warn about new user credentials (change password immediately!)
+- name: Warn about new user credentials
   ansible.builtin.debug:
     msg: >
       New user '{{ developer_username }}' was created.
       Initial password: {{ developer_password }}
       → Change it immediately via UI or API!
   when: user_creation.changed
+
+# ============================
+# Enable Docker Bearer Token Realm
+# ============================
+- name: Get current security realms
+  ansible.builtin.uri:
+    url: "{{ nexus_api }}/security/realms/active"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200]
+    return_content: yes
+  register: current_realms
+
+- name: Enable Docker Bearer Token Realm
+  ansible.builtin.uri:
+    url: "{{ nexus_api }}/security/realms/active"
+    method: PUT
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body: >
+      {{
+        (current_realms.json + ["DockerToken"])
+        | unique
+      }}
+    status_code: 200
+  when: "'DockerToken' not in current_realms.json"
+
+  # ============================
+# Configure Base URL
+# ============================
+- name: Get current Nexus system configuration
+  ansible.builtin.uri:
+    url: "{{ nexus_api }}/system/config"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200]
+    return_content: yes
+  register: nexus_config
+
+- name: Set Nexus Base URL
+  ansible.builtin.uri:
+    url: "{{ nexus_api }}/system/config"
+    method: PUT
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body: >
+      {{
+        nexus_config.json
+        | combine({'baseUrl': nexus_public_url})
+      }}
+    status_code: 200
+  when: nexus_config.json.baseUrl != nexus_public_url
+
+

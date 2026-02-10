@@ -1,5 +1,5 @@
-nexus_private_ip: "10.0.10.108"          # internal IP of the Nexus server
-registry_domain: "35-182-255-128.sslip.io" # Replace with your public DNS, i.e nginx DNS
+nexus_server_ip: "10.0.10.69"          # internal IP of the Nexus server
+registry_domain: "3-99-131-82.sslip.io" # Replace with your public DNS, i.e nginx DNS
 keystore_pass: "changeit"
 key_alias: "nexus"
 docker_hosted_repo: "myapp-docker-hosted"
