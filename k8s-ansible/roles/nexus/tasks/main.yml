@@ -1,6 +1,6 @@
 - name: Install Java for Nexus
   apt:
-    name: openjdk-8-jdk
+    name: openjdk-11-jdk
     state: present
 
 - name: Create nexus user
@@ -70,7 +70,7 @@
 - name: Get Nexus admin password
   command: cat /opt/sonatype-work/nexus3/admin.password
   register: nexus_password
-  ignore_errors: yes
+
 
 - name: Display Nexus password
   debug:
