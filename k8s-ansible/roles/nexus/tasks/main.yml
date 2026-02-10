@@ -2,6 +2,7 @@
   apt:
     name: openjdk-17-jdk
     state: present
+    update_cache: yes
 
 - name: Create nexus user
   user:
