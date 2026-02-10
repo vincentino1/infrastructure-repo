@@ -111,16 +111,26 @@
 # ============================
 # Enable Docker Bearer Token Realm
 # ============================
-- name: Get current security realms
+- name: Get current active realms
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/realms/active"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
-    status_code: [200]
+    status_code: 200
     return_content: yes
   register: current_realms
+  changed_when: false
+
+- name: Ensure DockerToken realm is included
+  ansible.builtin.set_fact:
+    updated_realms: >-
+      {{
+        (current_realms.json + ['DockerToken'])
+        | unique
+      }}
+
 
 - name: Enable Docker Bearer Token Realm
   ansible.builtin.uri:
@@ -130,13 +140,12 @@
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     body_format: json
-    body:
-      - "NexusAuthenticatingRealm"
-      - "NexusAuthorizingRealm"
-      - "DockerToken"
+    body: "{{ updated_realms }}"
     status_code: [200, 204]
-  register: realms_update
-  changed_when: realms_update.status == 204
+  register: realm_update
+  when: "'DockerToken' not in current_realms.json"
+  changed_when: realm_update.status == 204
+
 
 
   # ============================
@@ -152,6 +161,7 @@
     status_code: [200]
     return_content: yes
   register: nexus_config
+  changed_when: false
 
 - name: Set Nexus Base URL
   ansible.builtin.uri:
@@ -166,7 +176,7 @@
         nexus_config.json
         | combine({'baseUrl': nexus_public_url})
       }}
-    status_code: 200
+    status_code: [200, 204]
+  register: nexus_config_update
   when: nexus_config.json.baseUrl != nexus_public_url
-
-
+  changed_when: nexus_config_update.status == 204
