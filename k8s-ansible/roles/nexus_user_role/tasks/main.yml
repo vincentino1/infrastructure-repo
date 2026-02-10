@@ -130,13 +130,14 @@
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     body_format: json
-    body: >
-      {{
-        (current_realms.json + ["DockerToken"])
-        | unique
-      }}
-    status_code: 200
-  when: "'DockerToken' not in current_realms.json"
+    body:
+      - "NexusAuthenticatingRealm"
+      - "NexusAuthorizingRealm"
+      - "DockerToken"
+    status_code: [200, 204]
+  register: realms_update
+  changed_when: realms_update.status == 204
+
 
   # ============================
 # Configure Base URL
