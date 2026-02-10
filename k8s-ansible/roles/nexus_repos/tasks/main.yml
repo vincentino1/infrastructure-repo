@@ -1,12 +1,3 @@
-- name: Set Nexus repository variables
-  ansible.builtin.set_fact:
-    repo_prefix: "myapp-"
-    docker_port: 5000            
-    nexus_admin_user: "admin"
-    nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}"
-    nexus_base_url: "http://{{ nexus_private_ip }}:8081"
-    nexus_repo_api: "{{ nexus_base_url }}/service/rest/v1/repositories"
-
 
 # Maven Repositories
 - name: Check maven-hosted repo
