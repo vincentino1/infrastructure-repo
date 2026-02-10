@@ -30,7 +30,7 @@
         versionPolicy: MIXED
         layoutPolicy: STRICT
     status_code: 201
-  when: maven_hosted.status == 404
+  ignore_errors: true
 
 - name: Check maven-proxy repo
   uri:
@@ -57,6 +57,7 @@
       storage:
         blobStoreName: default
         strictContentTypeValidation: true
+        
       proxy:
         remoteUrl: https://repo1.maven.org/maven2/
         contentMaxAge: 1440
@@ -71,7 +72,7 @@
         blocked: false
         autoBlock: true
     status_code: 201
-  when: maven_proxy.status == 404
+  ignore_errors: true
 
 - name: Check maven-group repo
   uri:
@@ -103,7 +104,7 @@
           - "{{ repo_prefix }}maven-hosted"
           - "{{ repo_prefix }}maven-proxy"
     status_code: 201
-  when: maven_group.status == 404
+  ignore_errors: true
 
 # npm Repositories
 - name: Check npm-hosted repo
@@ -133,7 +134,7 @@
         strictContentTypeValidation: true
         writePolicy: ALLOW
     status_code: 201
-  when: npm_hosted.status == 404
+  ignore_errors: true
 
 - name: Check npm-proxy repo
   uri:
@@ -168,7 +169,7 @@
         enabled: true
         timeToLive: 1440
     status_code: 201
-  when: npm_proxy.status == 404
+  ignore_errors: true
 
 - name: Check npm-group repo
   uri:
@@ -200,7 +201,7 @@
           - "{{ repo_prefix }}npm-hosted"
           - "{{ repo_prefix }}npm-proxy"
     status_code: 201
-  when: npm_group.status == 404
+  ignore_errors: true
 
 # PyPI Repositories
 - name: Check pypi-hosted repo
@@ -228,8 +229,9 @@
       storage:
         blobStoreName: default
         strictContentTypeValidation: true
+        writePolicy: ALLOW
     status_code: 201
-  when: pypi_hosted.status == 404
+  ignore_errors: true
 
 - name: Check pypi-proxy repo
   uri:
@@ -261,7 +263,7 @@
         contentMaxAge: 1440
         metadataMaxAge: 1440
     status_code: 201
-  when: pypi_proxy.status == 404
+  ignore_errors: true
 
 - name: Check pypi-group repo
   uri:
@@ -293,7 +295,7 @@
           - "{{ repo_prefix }}pypi-hosted"
           - "{{ repo_prefix }}pypi-proxy"
     status_code: 201
-  when: pypi_group.status == 404
+  ignore_errors: true
 
 # Docker Repositories
 - name: Check docker-hosted repo
@@ -327,7 +329,7 @@
         forceBasicAuth: true
         httpPort: "{{ docker_port }}"
     status_code: 201
-  when: docker_hosted.status == 404
+  ignore_errors: true
 
 - name: Check docker-proxy repo
   uri:
@@ -368,7 +370,7 @@
         v1Enabled: false
         forceBasicAuth: true
     status_code: 201
-  when: docker_proxy.status == 404
+  ignore_errors: true
 
 - name: Check docker-group repo
   uri:
@@ -395,6 +397,8 @@
       storage:
         blobStoreName: default
         strictContentTypeValidation: true
+        writePolicy: ALLOW
+
       group:
         memberNames:
           - "{{ repo_prefix }}docker-hosted"
@@ -403,5 +407,5 @@
         v1Enabled: false
         forceBasicAuth: true
     status_code: 201
-  when: docker_group.status == 404
+  ignore_errors: true
 
