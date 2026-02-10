@@ -170,7 +170,6 @@
         | list
       }}
 
-
 - name: Create Base URL capability
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/capabilities"
@@ -181,8 +180,6 @@
     body_format: json
     body:
       typeId: "capability.baseurl"
-      enabled: true
-      notes: "Managed by Ansible"
       properties:
         baseUrl: "{{ nexus_public_url }}"
     status_code: [200, 201]
@@ -198,8 +195,6 @@
     body_format: json
     body:
       typeId: "capability.baseurl"
-      enabled: true
-      notes: "Managed by Ansible"
       properties:
         baseUrl: "{{ nexus_public_url }}"
     status_code: [200, 204]
