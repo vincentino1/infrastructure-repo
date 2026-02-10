@@ -197,6 +197,14 @@ module "nexus_sg" {
     },
     
     {
+      from_port = 8081
+      to_port   = 8081
+      protocol  = "tcp"
+      description = "Allow Nexus access from bastion for SSH tunnel"
+      source_security_group_id = module.bastion_sg.security_group_id
+    },
+
+    {
       from_port                = 22
       to_port                  = 22
       protocol                 = "tcp"
