@@ -131,7 +131,6 @@
         | unique
       }}
 
-
 - name: Enable Docker Bearer Token Realm
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/realms/active"
@@ -146,37 +145,64 @@
   when: "'DockerToken' not in current_realms.json"
   changed_when: realm_update.status == 204
 
-
-
   # ============================
 # Configure Base URL
 # ============================
-- name: Get current Nexus system configuration
+- name: Get existing Nexus capabilities
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/system/config"
+    url: "{{ nexus_api_url }}/capabilities"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
-    status_code: [200]
+    status_code: 200
     return_content: yes
-  register: nexus_config
+  register: nexus_capabilities
   changed_when: false
 
-- name: Set Nexus Base URL
+- name: Find Base URL capability
+  ansible.builtin.set_fact:
+    baseurl_capability: >-
+      {{
+        (nexus_capabilities.json | selectattr('typeId', 'equalto', 'capability.baseurl') | list)
+      }}
+
+- name: Create Base URL capability
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/system/config"
+    url: "{{ nexus_api_url }}/capabilities"
+    method: POST
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      typeId: "capability.baseurl"
+      enabled: true
+      notes: "Managed by Ansible"
+      properties:
+        baseUrl: "{{ nexus_public_url }}"
+    status_code: [200, 201]
+  when: baseurl_capability | length == 0
+
+- name: Update Base URL capability
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/capabilities/{{ baseurl_capability[0].id }}"
     method: PUT
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     body_format: json
-    body: >
-      {{
-        nexus_config.json
-        | combine({'baseUrl': nexus_public_url})
-      }}
+    body:
+      typeId: "capability.baseurl"
+      enabled: true
+      notes: "Managed by Ansible"
+      properties:
+        baseUrl: "{{ nexus_public_url }}"
     status_code: [200, 204]
-  register: nexus_config_update
-  when: nexus_config.json.baseUrl != nexus_public_url
-  changed_when: nexus_config_update.status == 204
+  when: baseurl_capability | length > 0
+
+
+
+
+ 
+ 
