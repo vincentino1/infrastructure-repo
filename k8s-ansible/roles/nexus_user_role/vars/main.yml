@@ -1,7 +1,7 @@
 your_developer_username: jenkins
 your_developer_password: jenkins123
 your_developer_email: myapp-developer@test.com
-nexus_api_base_url: 10.0.10.108
+nexus_api_base_url: "http://10.0.10.108:8081"
 
 
 
