@@ -149,49 +149,25 @@
 # Configure Base URL
 # ============================
 
+- name: Get Nexus capabilities
+  uri:
+    url: "{{ nexus_api }}/capabilities"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_password }}"
+    force_basic_auth: yes
+    return_content: yes
+  register: nexus_capabilities
+
 - name: Find Base URL capability
-  ansible.builtin.set_fact:
-    baseurl_capability: >-
-      {{
-        nexus_capabilities.json
-        | selectattr('type', 'equalto', 'BaseUrlCapability')
-        | list
-      }}
+  set_fact:
+    base_url_capability: >-
+      {{ nexus_capabilities.json
+         | selectattr('type','equalto','baseurl')
+         | list }}
+  when: nexus_capabilities is defined and nexus_capabilities.json is defined
 
-- name: Create Base URL capability
-  ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/capabilities"
-    method: POST
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    body_format: json
-    body:
-      typeId: "BaseUrlCapability"
-      enabled: true
-      notes: "Managed by Ansible"
-      properties:
-        baseUrl: "{{ nexus_public_url }}"
-    status_code: [200, 201]
-  when: baseurl_capability | length == 0
-
-- name: Update Base URL capability
-  ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/capabilities/{{ baseurl_capability[0].id }}"
-    method: PUT
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    body_format: json
-    body:
-      typeId: "BaseUrlCapability"
-      enabled: true
-      notes: "Managed by Ansible"
-      properties:
-        baseUrl: "{{ nexus_public_url }}"
-    status_code: [200, 204]
-  when: baseurl_capability | length > 0
-
-
-
- 
+- name: Fail if Base URL capability is missing
+  fail:
+    msg: "Base URL capability not found. You must create it manually or via API."
+  when: base_url_capability | length == 0
