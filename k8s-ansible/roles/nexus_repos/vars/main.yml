@@ -2,4 +2,5 @@ repo_prefix: "myapp-"
 nexus_admin_user: "admin"
 nexus_admin_pass: "admin123"
 nexus_base_url: "http://10.0.10.69:8081"
-nexus_api_url: "{{ nexus_base_url }}/service/rest/v1/repositories"
+nexus_api_url: "{{ nexus_base_url }}/service/rest/v1"
+
