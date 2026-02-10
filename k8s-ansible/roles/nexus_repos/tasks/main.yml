@@ -67,6 +67,9 @@
       maven:
         versionPolicy: MIXED
         layoutPolicy: STRICT
+      httpClient:                      
+        blocked: false
+        autoBlock: true
     status_code: 201
   when: maven_proxy.status == 404
 
