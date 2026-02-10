@@ -20,7 +20,7 @@
   register: role_check
   changed_when: false
 
-- name: Create role 'myapp-developer' (read from all repos + deploy to hosted)
+- name: Create role 'myapp-developer'
   ansible.builtin.uri:
     url: "{{ nexus_base_url }}/service/rest/v1/security/roles"
     method: POST
@@ -31,23 +31,30 @@
       {
         "id": "myapp-developer",
         "name": "MyApp Developer",
-        "description": "Can browse/read everything + deploy/edit/delete to hosted repositories",
+        "description": "Read/browse all repositories, push to hosted repositories",
         "source": "default",
         "privileges": [
           "nx-repository-view-*-browse",
           "nx-repository-view-*-read",
-          "nx-repository-view-*-add",
-          "nx-repository-view-*-edit",
-          "nx-repository-view-*-delete"
+          "nx-repository-view-maven2-myapp-maven-hosted-add",
+          "nx-repository-view-maven2-myapp-maven-hosted-edit",
+          "nx-repository-view-maven2-myapp-maven-hosted-delete",
+          "nx-repository-view-npm-myapp-npm-hosted-add",
+          "nx-repository-view-npm-myapp-npm-hosted-edit",
+          "nx-repository-view-npm-myapp-npm-hosted-delete",
+          "nx-repository-view-pypi-myapp-pypi-hosted-add",
+          "nx-repository-view-pypi-myapp-pypi-hosted-edit",
+          "nx-repository-view-pypi-myapp-pypi-hosted-delete",
+          "nx-repository-view-docker-myapp-docker-hosted-add",
+          "nx-repository-view-docker-myapp-docker-hosted-edit",
+          "nx-repository-view-docker-myapp-docker-hosted-delete"
         ],
         "roles": []
       }
     status_code: [201]
     force_basic_auth: true
-    return_content: yes
   when: role_check.status == 404
-  register: role_creation
-
+  
 - name: Check if developer user already exists
   ansible.builtin.uri:
     url: "{{ nexus_api_base_url }}/service/rest/v1/security/users/{{ developer_username }}"
@@ -62,7 +69,7 @@
 
 - name: Create dedicated developer user and assign role
   ansible.builtin.uri:
-    url: "{{ nexus_api_base_url }}/service/rest/v1/security/users/"
+    url: "http://localhost:8081/service/rest/v1/security/users"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
