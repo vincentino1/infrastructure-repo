@@ -149,12 +149,49 @@
 # Configure Base URL
 # ============================
 
-- name: Configure Nexus public URL
-  ansible.builtin.lineinfile:
-    path: /opt/sonatype-work/nexus3/etc/nexus.properties
-    regexp: '^nexus.publicUrl='
-    line: "nexus.publicUrl={{ nexus_public_url }}"
-    create: true
-  notify: Restart Nexus
+- name: Find Base URL capability
+  ansible.builtin.set_fact:
+    baseurl_capability: >-
+      {{
+        nexus_capabilities.json
+        | selectattr('type', 'equalto', 'BaseUrlCapability')
+        | list
+      }}
+
+- name: Create Base URL capability
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/capabilities"
+    method: POST
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      typeId: "BaseUrlCapability"
+      enabled: true
+      notes: "Managed by Ansible"
+      properties:
+        baseUrl: "{{ nexus_public_url }}"
+    status_code: [200, 201]
+  when: baseurl_capability | length == 0
+
+- name: Update Base URL capability
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/capabilities/{{ baseurl_capability[0].id }}"
+    method: PUT
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      typeId: "BaseUrlCapability"
+      enabled: true
+      notes: "Managed by Ansible"
+      properties:
+        baseUrl: "{{ nexus_public_url }}"
+    status_code: [200, 204]
+  when: baseurl_capability | length > 0
+
+
 
  
