@@ -1,4 +1,17 @@
 # Maven Repositories
+- name: Check if myapp-maven-hosted exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api }}/repositories/myapp-maven-hosted"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: maven_repo_check
+  changed_when: false
+
+
 - name: Create myapp-maven-hosted
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/maven/hosted"
