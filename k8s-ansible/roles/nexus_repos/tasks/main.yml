@@ -15,7 +15,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 - name: Create myapp-maven-proxy
   ansible.builtin.uri:
@@ -36,7 +35,7 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
+  
 
 - name: Create myapp-maven-group
   ansible.builtin.uri:
@@ -55,7 +54,7 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
+
 
 # npm Repositories
 - name: Create myapp-npm-hosted
@@ -91,7 +90,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 - name: Create myapp-npm-group
   ansible.builtin.uri:
@@ -109,7 +107,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 # PyPI Repositories
 - name: Create myapp-pypi-hosted
@@ -127,7 +124,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 - name: Create myapp-pypi-proxy
   ansible.builtin.uri:
@@ -163,7 +159,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 # Docker Repositories
 - name: Create myapp-docker-hosted
@@ -182,7 +177,7 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
+
 
 - name: Create myapp-docker-proxy
   ansible.builtin.uri:
@@ -201,7 +196,6 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
 
 - name: Create myapp-docker-group
   ansible.builtin.uri:
@@ -220,4 +214,4 @@
       }
     status_code: [201, 400]
     force_basic_auth: true
-  ignore_errors: true
+
