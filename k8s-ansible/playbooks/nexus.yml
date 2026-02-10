@@ -3,5 +3,3 @@
   become: yes
   roles:
     - nexus # Install Sonatype Nexus Repository OSS
-    - nexus_repos # Create Repositories in Nexus
-    - nexus_user_role # create user & roles
