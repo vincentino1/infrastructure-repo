@@ -169,6 +169,9 @@
         | selectattr('typeId', 'equalto', 'capability.baseurl')
         | list
       }}
+- debug:
+    var: nexus_capabilities.json
+
 
 - name: Create Base URL capability
   ansible.builtin.uri:
@@ -187,8 +190,7 @@
 
   
   
-- debug:
-    var: nexus_capabilities.json
+
 
 
 - name: Update Base URL capability
