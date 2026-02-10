@@ -185,6 +185,12 @@
     status_code: [200, 201]
   when: baseurl_capability | length == 0
 
+  
+  
+- debug:
+    var: nexus_capabilities.json
+
+
 - name: Update Base URL capability
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/capabilities/{{ baseurl_capability[0].id }}"
