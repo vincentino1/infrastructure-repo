@@ -165,9 +165,11 @@
     baseurl_capability: >-
       {{
         nexus_capabilities.json
+        | selectattr('typeId', 'defined')
         | selectattr('typeId', 'equalto', 'capability.baseurl')
         | list
       }}
+
 
 - name: Create Base URL capability
   ansible.builtin.uri:
