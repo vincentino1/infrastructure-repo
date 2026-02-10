@@ -76,7 +76,7 @@
 - name: Get Nexus admin password
   command: cat /opt/sonatype-work/nexus3/admin.password
   register: nexus_password
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Display Nexus password
   debug:
