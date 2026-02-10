@@ -15,7 +15,8 @@
   get_url:
     url: https://download.sonatype.com/nexus/3/nexus-3.89.0-09-linux-x86_64.tar.gz
     dest: /tmp/nexus.tar.gz
-    checksum: SHA:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd
+    checksum: "sha256:3f0f49265ce24a6f79827ff706a75f204d6709324e8ab67d04a426d79a25e2fd"
+
 
 - name: Extract Nexus
   unarchive:
