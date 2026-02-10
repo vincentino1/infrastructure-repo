@@ -164,7 +164,7 @@
   ansible.builtin.set_fact:
     baseurl_capability: >-
       {{
-        nexus_capabilities.json.items
+        nexus_capabilities.json
         | selectattr('typeId', 'equalto', 'capability.baseurl')
         | list
       }}
