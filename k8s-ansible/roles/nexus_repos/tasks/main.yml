@@ -131,6 +131,7 @@
       storage:
         blobStoreName: default
         strictContentTypeValidation: true
+        writePolicy: ALLOW
     status_code: 201
   when: npm_hosted.status == 404
 
