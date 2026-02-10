@@ -7,11 +7,11 @@
     developer_username: "{{ your_developer_username | default('myapp-developer-role') }}"
     developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"
     developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
-    nexus_api: "http://{{ nexus_host }}:8081/service/rest/v1"
+    nexus_api_url: "http://{{ nexus_host }}:8081/service/rest/v1"
 
 - name: Check if role 'myapp-developer-role' exists
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/roles/myapp-developer-role"
+    url: "{{ nexus_api_url }}/security/roles/myapp-developer-role"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -23,7 +23,7 @@
 
 - name: Create role 'myapp-developer-role'
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/roles"
+    url: "{{ nexus_api_url }}/security/roles"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -60,19 +60,23 @@
 
 - name: Check if developer user exists
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/users/{{ developer_username }}"
+    url: "{{ nexus_api_url }}/security/users"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
-    status_code: [200, 404]
+    status_code: 200
     return_content: yes
   register: user_check
   changed_when: false
 
+- name: Determine if jenkins user exists
+  ansible.builtin.set_fact:
+    jenkins_exists: "{{ 'jenkins' in (user_check.json | map(attribute='userId') | list) }}"
+
 - name: Create developer user and assign role
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/users"
+    url: "{{ nexus_api_url }}/security/users"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -80,8 +84,8 @@
     body_format: json
     body:
       userId: "{{ developer_username }}"
-      firstName: "MyApp"
-      lastName: "Developer"
+      firstName: "Jenkins"
+      lastName: "CI"
       emailAddress: "{{ developer_email }}"
       source: "default"
       status: "active"
@@ -90,11 +94,11 @@
       roles:
         - "myapp-developer-role"
       password: "{{ developer_password }}"
-    status_code: 201
     return_content: yes
-  when: user_check.status == 404
+    status_code: [200, 201]
   register: user_creation
-  changed_when: user_check.status == 404
+  when: not jenkins_exists
+  changed_when: user_creation.status == 201
 
 - name: Warn about new user credentials
   ansible.builtin.debug:
@@ -109,7 +113,7 @@
 # ============================
 - name: Get current security realms
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/realms/active"
+    url: "{{ nexus_api_url }}/security/realms/active"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -120,7 +124,7 @@
 
 - name: Enable Docker Bearer Token Realm
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/security/realms/active"
+    url: "{{ nexus_api_url }}/security/realms/active"
     method: PUT
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -139,7 +143,7 @@
 # ============================
 - name: Get current Nexus system configuration
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/system/config"
+    url: "{{ nexus_api_url }}/system/config"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -150,7 +154,7 @@
 
 - name: Set Nexus Base URL
   ansible.builtin.uri:
-    url: "{{ nexus_api }}/system/config"
+    url: "{{ nexus_api_url }}/system/config"
     method: PUT
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
