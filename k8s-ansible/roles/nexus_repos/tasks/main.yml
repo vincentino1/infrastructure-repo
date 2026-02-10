@@ -1,16 +1,15 @@
 # Maven Repositories
 - name: Check if myapp-maven-hosted exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/myapp-maven-hosted"
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}maven-hosted"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     status_code: [200, 404]
     return_content: yes
-  register: maven_repo_check
+  register: maven_hosted_check
   changed_when: false
-
 
 - name: Create myapp-maven-hosted
   ansible.builtin.uri:
@@ -28,6 +27,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: maven_hosted_check.status == 404
+
+
+- name: Check if myapp-maven-proxy exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}maven-proxy"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: maven_proxy_check
+  changed_when: false
 
 - name: Create myapp-maven-proxy
   ansible.builtin.uri:
@@ -48,7 +61,20 @@
       }
     status_code: [201]
     force_basic_auth: true
-  
+  when: maven_proxy_check.status == 404
+
+
+- name: Check if myapp-maven-group exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}maven-group"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: maven_group_check
+  changed_when: false
 
 - name: Create myapp-maven-group
   ansible.builtin.uri:
@@ -67,9 +93,22 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: maven_group_check.status == 404
 
 
 # npm Repositories
+- name: Check if myapp-npm-hosted exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-hosted"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: npm_hosted_check
+  changed_when: false
+
 - name: Create myapp-npm-hosted
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/npm/hosted"
@@ -85,6 +124,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: npm_hosted_check.status == 404
+
+
+- name: Check if myapp-npm-proxy exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-proxy"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: npm_proxy_check
+  changed_when: false
 
 - name: Create myapp-npm-proxy
   ansible.builtin.uri:
@@ -104,6 +157,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: npm_proxy_check.status == 404
+
+
+- name: Check if myapp-npm-group exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-group"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: npm_group_check
+  changed_when: false
 
 - name: Create myapp-npm-group
   ansible.builtin.uri:
@@ -121,8 +188,22 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: npm_group_check.status == 404
+
 
 # PyPI Repositories
+- name: Check if myapp-pypi-hosted exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-hosted"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: pypi_hosted_check
+  changed_when: false
+
 - name: Create myapp-pypi-hosted
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/pypi/hosted"
@@ -138,6 +219,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: pypi_hosted_check.status == 404
+
+
+- name: Check if myapp-pypi-proxy exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-proxy"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: pypi_proxy_check
+  changed_when: false
 
 - name: Create myapp-pypi-proxy
   ansible.builtin.uri:
@@ -157,6 +252,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: pypi_proxy_check.status == 404
+
+
+- name: Check if myapp-pypi-group exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-group"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: pypi_group_check
+  changed_when: false
 
 - name: Create myapp-pypi-group
   ansible.builtin.uri:
@@ -174,8 +283,22 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: pypi_group_check.status == 404
+
 
 # Docker Repositories
+- name: Check if myapp-docker-hosted exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-hosted"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: docker_hosted_check
+  changed_when: false
+
 - name: Create myapp-docker-hosted
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/docker/hosted"
@@ -192,7 +315,20 @@
       }
     status_code: [201]
     force_basic_auth: true
+  when: docker_hosted_check.status == 404
 
+
+- name: Check if myapp-docker-proxy exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-proxy"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: docker_proxy_check
+  changed_when: false
 
 - name: Create myapp-docker-proxy
   ansible.builtin.uri:
@@ -213,9 +349,22 @@
         "dockerProxy": { "indexType": "HUB" },
         "httpClient": { "blocked": false, "autoBlock": true, "httpPort": null, "httpsPort": null }
       }
-
     status_code: [201]
     force_basic_auth: true
+  when: docker_proxy_check.status == 404
+
+
+- name: Check if myapp-docker-group exists
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-group"
+    method: GET
+    user: "{{ nexus_admin_user }}"
+    password: "{{ nexus_admin_pass }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+    return_content: yes
+  register: docker_group_check
+  changed_when: false
 
 - name: Create myapp-docker-group
   ansible.builtin.uri:
@@ -234,4 +383,4 @@
       }
     status_code: [201]
     force_basic_auth: true
-
+  when: docker_group_check.status == 404
