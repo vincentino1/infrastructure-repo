@@ -1,6 +1,5 @@
-repo_prefix: "myapp-"
-docker_port: 5000            
+repo_prefix: "myapp-"         
 nexus_admin_user: "admin"
 nexus_admin_pass: "admin123"
 nexus_base_url: "http://10.0.10.108:8081"
-nexus_repo_api: "{{ nexus_base_url }}/service/rest/v1/repositories"
+nexus_api_url: "{{ nexus_base_url }}/service/rest/v1/repositories"

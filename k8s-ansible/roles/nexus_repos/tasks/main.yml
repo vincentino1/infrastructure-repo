@@ -1,411 +1,206 @@
-
 # Maven Repositories
-- name: Check maven-hosted repo
-  uri:
-    url: "{{ nexus_repo_api }}/maven-hosted/{{ repo_prefix }}maven-hosted"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: maven_hosted
-  changed_when: false
-
-- name: Create maven-hosted
-  uri:
-    url: "{{ nexus_repo_api }}/maven/hosted"
+- name: Create myapp-maven-hosted
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/maven/hosted"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}maven-hosted"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        writePolicy: ALLOW
-      maven:
-        versionPolicy: MIXED
-        layoutPolicy: STRICT
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}maven-hosted",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true, "writePolicy": "ALLOW" },
+        "maven": { "versionPolicy": "MIXED", "layoutPolicy": "STRICT", "contentDisposition": "INLINE" }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check maven-proxy repo
-  uri:
-    url: "{{ nexus_repo_api }}/maven-proxy/{{ repo_prefix }}maven-proxy"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: maven_proxy
-  changed_when: false
-
-- name: Create maven-proxy
-  uri:
-    url: "{{ nexus_repo_api }}/maven/proxy"
+- name: Create myapp-maven-proxy
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/maven/proxy"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}maven-proxy"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        
-      proxy:
-        remoteUrl: https://repo1.maven.org/maven2/
-        contentMaxAge: 1440
-        metadataMaxAge: 1440
-      negativeCache:
-        enabled: true
-        timeToLive: 1440
-      maven:
-        versionPolicy: MIXED
-        layoutPolicy: STRICT
-      httpClient:                      
-        blocked: false
-        autoBlock: true
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}maven-proxy",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "proxy": { "remoteUrl": "https://repo1.maven.org/maven2/", "contentMaxAge": 1440, "metadataMaxAge": 1440 },
+        "negativeCache": { "enabled": true, "timeToLive": 1440 },
+        "httpClient": { "blocked": false, "autoBlock": true },
+        "maven": { "versionPolicy": "MIXED", "layoutPolicy": "STRICT" }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check maven-group repo
-  uri:
-    url: "{{ nexus_repo_api }}/maven-group/{{ repo_prefix }}maven-group"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: maven_group
-  changed_when: false
-
-- name: Create maven-group
-  uri:
-    url: "{{ nexus_repo_api }}/maven/group"
+- name: Create myapp-maven-group
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/maven/group"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}maven-group"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      group:
-        memberNames:
-          - "{{ repo_prefix }}maven-hosted"
-          - "{{ repo_prefix }}maven-proxy"
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}maven-group",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "group": { "memberNames": ["{{ repo_prefix }}maven-hosted", "{{ repo_prefix }}maven-proxy"] },
+        "maven": { "versionPolicy": "MIXED", "layoutPolicy": "STRICT" }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
 # npm Repositories
-- name: Check npm-hosted repo
-  uri:
-    url: "{{ nexus_repo_api }}/npm-hosted/{{ repo_prefix }}npm-hosted"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: npm_hosted
-  changed_when: false
-
-- name: Create npm-hosted
-  uri:
-    url: "{{ nexus_repo_api }}/npm/hosted"
+- name: Create myapp-npm-hosted
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/npm/hosted"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}npm-hosted"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        writePolicy: ALLOW
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}npm-hosted",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check npm-proxy repo
-  uri:
-    url: "{{ nexus_repo_api }}/npm-proxy/{{ repo_prefix }}npm-proxy"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: npm_proxy
-  changed_when: false
-
-- name: Create npm-proxy
-  uri:
-    url: "{{ nexus_repo_api }}/npm/proxy"
+- name: Create myapp-npm-proxy
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/npm/proxy"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}npm-proxy"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      proxy:
-        remoteUrl: https://registry.npmjs.org
-        contentMaxAge: 1440
-        metadataMaxAge: 1440
-      negativeCache:
-        enabled: true
-        timeToLive: 1440
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}npm-proxy",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "proxy": { "remoteUrl": "https://registry.npmjs.org", "contentMaxAge": 1440, "metadataMaxAge": 1440 },
+        "negativeCache": { "enabled": true, "timeToLive": 1440 }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check npm-group repo
-  uri:
-    url: "{{ nexus_repo_api }}/npm-group/{{ repo_prefix }}npm-group"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: npm_group
-  changed_when: false
-
-- name: Create npm-group
-  uri:
-    url: "{{ nexus_repo_api }}/npm/group"
+- name: Create myapp-npm-group
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/npm/group"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}npm-group"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      group:
-        memberNames:
-          - "{{ repo_prefix }}npm-hosted"
-          - "{{ repo_prefix }}npm-proxy"
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}npm-group",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "group": { "memberNames": ["{{ repo_prefix }}npm-hosted", "{{ repo_prefix }}npm-proxy"] }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
 # PyPI Repositories
-- name: Check pypi-hosted repo
-  uri:
-    url: "{{ nexus_repo_api }}/pypi-hosted/{{ repo_prefix }}pypi-hosted"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: pypi_hosted
-  changed_when: false
-
-- name: Create pypi-hosted
-  uri:
-    url: "{{ nexus_repo_api }}/pypi/hosted"
+- name: Create myapp-pypi-hosted
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/pypi/hosted"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}pypi-hosted"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        writePolicy: ALLOW
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}pypi-hosted",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check pypi-proxy repo
-  uri:
-    url: "{{ nexus_repo_api }}/pypi-proxy/{{ repo_prefix }}pypi-proxy"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: pypi_proxy
-  changed_when: false
-
-- name: Create pypi-proxy
-  uri:
-    url: "{{ nexus_repo_api }}/pypi/proxy"
+- name: Create myapp-pypi-proxy
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/pypi/proxy"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}pypi-proxy"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      proxy:
-        remoteUrl: https://pypi.org
-        contentMaxAge: 1440
-        metadataMaxAge: 1440
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}pypi-proxy",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "proxy": { "remoteUrl": "https://pypi.org", "contentMaxAge": 1440, "metadataMaxAge": 1440 },
+        "negativeCache": { "enabled": true, "timeToLive": 1440 }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check pypi-group repo
-  uri:
-    url: "{{ nexus_repo_api }}/pypi-group/{{ repo_prefix }}pypi-group"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: pypi_group
-  changed_when: false
-
-- name: Create pypi-group
-  uri:
-    url: "{{ nexus_repo_api }}/pypi/group"
+- name: Create myapp-pypi-group
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/pypi/group"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}pypi-group"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      group:
-        memberNames:
-          - "{{ repo_prefix }}pypi-hosted"
-          - "{{ repo_prefix }}pypi-proxy"
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}pypi-group",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "group": { "memberNames": ["{{ repo_prefix }}pypi-hosted", "{{ repo_prefix }}pypi-proxy"] }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
 # Docker Repositories
-- name: Check docker-hosted repo
-  uri:
-    url: "{{ nexus_repo_api }}/docker-hosted/{{ repo_prefix }}docker-hosted"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: docker_hosted
-  changed_when: false
-
-- name: Create docker-hosted
-  uri:
-    url: "{{ nexus_repo_api }}/docker/hosted"
+- name: Create myapp-docker-hosted
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/docker/hosted"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}docker-hosted"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        writePolicy: ALLOW
-      docker:
-        v1Enabled: false
-        forceBasicAuth: true
-        httpPort: "{{ docker_port }}"
-    status_code: 201
+    body: |
+      {
+        "name": "{{ repo_prefix }}docker-hosted",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true, "writePolicy": "ALLOW" },
+        "docker": { "v1Enabled": false, "forceBasicAuth": true, "httpPort": null, "httpsPort": null }
+      }
+    status_code: [201, 400]
+    force_basic_auth: true
   ignore_errors: true
 
-- name: Check docker-proxy repo
-  uri:
-    url: "{{ nexus_repo_api }}/docker-proxy/{{ repo_prefix }}docker-proxy"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    status_code: [200, 404]
-  register: docker_proxy
-  changed_when: false
-
-- name: Create docker-proxy
-  uri:
-    url: "{{ nexus_repo_api }}/docker/proxy"
+- name: Create myapp-docker-group
+  ansible.builtin.uri:
+    url: "{{ nexus_api_url }}/docker/group"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
     body_format: json
-    body:
-      name: "{{ repo_prefix }}docker-proxy"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      proxy:
-        remoteUrl: https://registry-1.docker.io
-        contentMaxAge: 1440
-        metadataMaxAge: 1440
-      negativeCache:
-        enabled: true
-        timeToLive: 1440
-      httpClient:
-        blocked: false
-        autoBlock: true
-      docker:
-        v1Enabled: false
-        forceBasicAuth: true
-    status_code: 201
-  ignore_errors: true
-
-- name: Check docker-group repo
-  uri:
-    url: "{{ nexus_repo_api }}/docker-group/{{ repo_prefix }}docker-group"
-    method: GET
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
+    body: |
+      {
+        "name": "{{ repo_prefix }}docker-group",
+        "online": true,
+        "storage": { "blobStoreName": "default", "strictContentTypeValidation": true },
+        "group": { "memberNames": ["{{ repo_prefix }}docker-hosted"] },
+        "docker": { "v1Enabled": false, "forceBasicAuth": true, "httpPort": null, "httpsPort": null }
+      }
+    status_code: [201, 400]
     force_basic_auth: true
-    status_code: [200, 404]
-  register: docker_group
-  changed_when: false
-
-- name: Create docker-group
-  uri:
-    url: "{{ nexus_repo_api }}/docker/group"
-    method: POST
-    user: "{{ nexus_admin_user }}"
-    password: "{{ nexus_admin_pass }}"
-    force_basic_auth: true
-    body_format: json
-    body:
-      name: "{{ repo_prefix }}docker-group"
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-        writePolicy: ALLOW
-
-      group:
-        memberNames:
-          - "{{ repo_prefix }}docker-hosted"
-          - "{{ repo_prefix }}docker-proxy"
-      docker:
-        v1Enabled: false
-        forceBasicAuth: true
-    status_code: 201
   ignore_errors: true
-
