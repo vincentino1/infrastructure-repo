@@ -67,10 +67,17 @@
     enabled: yes
     daemon_reload: yes
 
-- name: Wait for Nexus to start
-  wait_for:
+- name: Wait for Nexus HTTP port to open
+  ansible.builtin.wait_for:
     port: 8081
-    delay: 30
+    delay: 5
+    timeout: 300
+
+
+- name: Wait for Nexus to generate admin password 
+  ansible.builtin.wait_for: 
+    path: /opt/sonatype-work/nexus3/admin.password 
+    state: present 
     timeout: 300
 
 - name: Get Nexus admin password
