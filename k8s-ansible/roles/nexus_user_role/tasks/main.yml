@@ -22,32 +22,23 @@
 
 - name: Create role 'myapp-developer' (read from all repos + deploy to hosted)
   ansible.builtin.uri:
-    url: "{{ nexus_api_base_url }}/service/rest/v1/security/roles"
+    url: "{{ nexus_base_url }}/service/rest/v1/security/roles"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     body_format: json
-    body: |
+    body: >-
       {
         "id": "myapp-developer",
         "name": "MyApp Developer",
-        "description": "Read/browse all repositories (including myapp-*), push/edit/delete to hosted repositories",
+        "description": "Can browse/read everything + deploy/edit/delete to hosted repositories",
         "source": "default",
         "privileges": [
-          "nx-repository-admin-docker-myapp-docker-group-*",
-          "nx-repository-admin-docker-myapp-docker-proxy-*",
-          "nx-repository-admin-maven2-myapp-maven-group-*",
-          "nx-repository-admin-maven2-myapp-maven-proxy-*",
-          "nx-repository-admin-maven2-myapp-npm-group-*",
-          "nx-repository-admin-maven2-myapp-npm-proxy-*",
-          "nx-repository-admin-maven2-myapp-pypi-group-*",
-          "nx-repository-admin-maven2-myapp-pypi-proxy-*",                  
-
-        
-          "nx-repository-admin-docker-myapp-docker-hosted-*",  
-          "nx-repository-admin-maven2-myapp-maven-hosted-*",
-          "nx-repository-admin-maven2-myapp-npm-hosted-*",
-          "nx-repository-admin-maven2-myapp-pypi-hosted-*"           
+          "nx-repository-view-*-browse",
+          "nx-repository-view-*-read",
+          "nx-repository-view-*-add",
+          "nx-repository-view-*-edit",
+          "nx-repository-view-*-delete"
         ],
         "roles": []
       }
