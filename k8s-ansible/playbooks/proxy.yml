@@ -2,4 +2,4 @@
   hosts: proxy_server
   become: yes
   roles:
-    - proxy # ssl termination with nginx reverse proxy
+    - setup-nginx-ssl # ssl termination with nginx reverse proxy

@@ -10,7 +10,7 @@
 
 - name: Check if role 'myapp-developer' already exists
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/roles/myapp-developer"
+    url: "{{ nexus_api_base_url }}/service/rest/v1/security/roles/myapp-developer"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -22,7 +22,7 @@
 
 - name: Create role 'myapp-developer' (read from all repos + deploy to hosted)
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/roles"
+    url: "{{ nexus_api_base_url }}/service/rest/v1/security/roles"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -34,13 +34,20 @@
         "description": "Read/browse all repositories (including myapp-*), push/edit/delete to hosted repositories",
         "source": "default",
         "privileges": [
-          "nx-repository-view-*-browse",               
-          "nx-repository-view-*-read",                 
+          "nx-repository-admin-docker-myapp-docker-group-*",
+          "nx-repository-admin-docker-myapp-docker-proxy-*",
+          "nx-repository-admin-maven2-myapp-maven-group-*",
+          "nx-repository-admin-maven2-myapp-maven-proxy-*",
+          "nx-repository-admin-maven2-myapp-npm-group-*",
+          "nx-repository-admin-maven2-myapp-npm-proxy-*",
+          "nx-repository-admin-maven2-myapp-pypi-group-*",
+          "nx-repository-admin-maven2-myapp-pypi-proxy-*",                  
 
           # Deploy privileges - applies to hosted repos (Nexus enforces type internally)
-          "nx-repository-view-*-add",                 
-          "nx-repository-view-*-edit",                 
-          "nx-repository-view-*-delete"                
+          "nx-repository-admin-docker-myapp-docker-hosted-*",  
+          "nx-repository-admin-maven2-myapp-maven-hosted-*",
+          "nx-repository-admin-maven2-myapp-npm-hosted-*",
+          "nx-repository-admin-maven2-myapp-pypi-hosted-*"           
         ],
         "roles": []
       }
@@ -52,7 +59,7 @@
 
 - name: Check if developer user already exists
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/users/{{ developer_username }}"
+    url: "{{ nexus_api_base_url }}/service/rest/v1/security/users/{{ developer_username }}"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -64,7 +71,7 @@
 
 - name: Create dedicated developer user and assign role
   ansible.builtin.uri:
-    url: "http://localhost:8081/service/rest/v1/security/users"
+    url: "{{ nexus_api_base_url }}/service/rest/v1/security/users/"
     method: POST
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
