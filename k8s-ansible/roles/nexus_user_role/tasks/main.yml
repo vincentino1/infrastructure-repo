@@ -54,9 +54,9 @@
         - "nx-repository-view-docker-myapp-docker-group-browse"
 
       roles: []
-    status_code: 201
+    status_code: [200, 201]
     return_content: yes
-  when: role_check.status == 404
+  when: role_check.status == 201
 
 - name: Check if developer user exists
   ansible.builtin.uri:
