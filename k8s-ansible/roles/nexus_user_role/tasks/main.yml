@@ -43,7 +43,7 @@
           "nx-repository-admin-maven2-myapp-pypi-group-*",
           "nx-repository-admin-maven2-myapp-pypi-proxy-*",                  
 
-          # Deploy privileges - applies to hosted repos (Nexus enforces type internally)
+        
           "nx-repository-admin-docker-myapp-docker-hosted-*",  
           "nx-repository-admin-maven2-myapp-maven-hosted-*",
           "nx-repository-admin-maven2-myapp-npm-hosted-*",
