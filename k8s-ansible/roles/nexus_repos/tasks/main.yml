@@ -32,7 +32,7 @@
 
 - name: Check if myapp-maven-proxy exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}maven-proxy"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}maven-proxy"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -66,7 +66,7 @@
 
 - name: Check if myapp-maven-group exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}maven-group"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}maven-group"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -99,7 +99,7 @@
 # npm Repositories
 - name: Check if myapp-npm-hosted exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-hosted"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}npm-hosted"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -129,7 +129,7 @@
 
 - name: Check if myapp-npm-proxy exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-proxy"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}npm-proxy"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -162,7 +162,7 @@
 
 - name: Check if myapp-npm-group exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}npm-group"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}npm-group"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -194,7 +194,7 @@
 # PyPI Repositories
 - name: Check if myapp-pypi-hosted exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-hosted"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}pypi-hosted"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -224,7 +224,7 @@
 
 - name: Check if myapp-pypi-proxy exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-proxy"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}pypi-proxy"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -257,7 +257,7 @@
 
 - name: Check if myapp-pypi-group exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}pypi-group"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}pypi-group"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -289,7 +289,7 @@
 # Docker Repositories
 - name: Check if myapp-docker-hosted exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-hosted"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}docker-hosted"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -320,7 +320,7 @@
 
 - name: Check if myapp-docker-proxy exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-proxy"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}docker-proxy"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -356,7 +356,7 @@
 
 - name: Check if myapp-docker-group exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/repositories/{{ repo_prefix }}docker-group"
+    url: "{{ nexus_api_url }}/{{ repo_prefix }}docker-group"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
