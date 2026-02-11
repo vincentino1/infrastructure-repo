@@ -99,6 +99,8 @@ ansible-playbook -i inventories/hosts.ini playbooks/db.yml
 ansible-playbook -i inventories/hosts.ini playbooks/nexus.yml
 
 ansible-playbook -i inventories/hosts.ini playbooks/proxy.yml
+
+ansible-playbook -i inventories/hosts.ini playbooks/nexus_repo_config.yml
 ```
 
 ### Setup Jenkins Server 
@@ -113,15 +115,6 @@ ansible-playbook -i inventories/hosts.ini playbooks/jenkins_plugins.yml --ask-va
 ```
 ### NOTE: After setting up the proxy server for ssl termination, Configure Docker Daemon in jenkins server or agent to trust the certificate.
 
-### Copy certificate from proxy located in this file path: /etc/nginx/certs/nexus.crt to jenkins server or agent
 ```bash
-sudo mkdir -p /etc/docker/certs.d/<NEXUS_HOSTNAME>
-sudo cp nexus.crt /etc/docker/certs.d/<NEXUS_HOSTNAME>/ca.crt
-sudo systemctl restart docker
+ansible-playbook -i inventories/hosts.ini playbooks/trust_cert_jenkins.yml 
 ```
-
-### Docker Authentication (Docker Bearer Token Realm)
-1. Log into Nexus UI
-2. Navigate to: Administration → Security → Realms
-3. Move **Docker Bearer Token Realm** to **Active**
-4. Save

@@ -65,9 +65,7 @@
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/users"
     method: GET
-    user: "{{ nexus_admin_user }}":q!
-
-    
+    user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
     force_basic_auth: true
     status_code: 200
