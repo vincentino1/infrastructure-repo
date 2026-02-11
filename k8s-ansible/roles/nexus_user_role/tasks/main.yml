@@ -57,9 +57,9 @@
         - "nx-repository-view-docker-myapp-docker-group-browse"
 
       roles: []
-    status_code: [200, 201]
+    status_code: [200, 404]
     return_content: yes
-  when: role_check.status == 201
+  when: role_check.status == 404
 
 - name: Check if users exist
   ansible.builtin.uri:
@@ -75,7 +75,7 @@
 
 - name: Determine if jenkins user exists
   ansible.builtin.set_fact:
-    jenkins_exists: "{{ 'jenkins' in (user_check.json | map(attribute='userId') | list) }}"
+    jenkins_exists: "{{ developer_username in (user_check.json | map(attribute='userId') | list) }}"
 
 - name: Create developer user and assign role
   ansible.builtin.uri:
