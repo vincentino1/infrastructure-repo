@@ -2,12 +2,12 @@ server {
     listen 443 ssl;
     server_name {{ registry_domain }};
 
-    ssl_certificate /etc/nginx/certs/nexus.crt;
-    ssl_certificate_key /etc/nginx/certs/nexus.key;
+    ssl_certificate {{ Public_certificate_path }};
+    ssl_certificate_key {{ Private_key_path }};
 
 
-    # Add this line to increase the limit to 50MB
-    client_max_body_size 50M;
+    # Add this line to increase the limit to 5G
+    client_max_body_size 5G;
 
     location / {
         proxy_pass http://{{nexus_server_ip}}:8081/;
