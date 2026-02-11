@@ -60,6 +60,7 @@
       roles: []
     status_code: [200, 201]
     return_content: yes
+  register: role_creation
   when: role_check.status == 404
 
 - name: Show role creation response
