@@ -4,14 +4,15 @@
     nexus_admin_user: "admin"
     nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}"
     repo_prefix: "myapp-"
-    developer_username: "{{ your_developer_username | default('myapp-developer-role') }}"
+    role_name: "myapp-developer-role"
+    developer_username: "{{ your_developer_username | default('{{ role_name }}') }}"
     developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"
     developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
     nexus_api_url: "{{ nexus_base_url }}/service/rest/v1"
 
-- name: Check if role 'myapp-developer-role' exists
+- name: Check if role exists
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/security/roles/myapp-developer-role"
+    url: "{{ nexus_api_url }}/security/roles/{{ role_name }}"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
@@ -30,8 +31,8 @@
     force_basic_auth: true
     body_format: json
     body:
-      id: "myapp-developer-role"
-      name: "myapp-developer-role"
+      id: "{{ role_name }}"
+      name: "{{ role_name }}"
       description: "Developer access to myapp repos"
       privileges:
         - "nx-repository-view-maven2-myapp-maven-hosted-read"
@@ -57,9 +58,14 @@
         - "nx-repository-view-docker-myapp-docker-group-browse"
 
       roles: []
-    status_code: [200, 404]
+    status_code: [200, 201]
     return_content: yes
   when: role_check.status == 404
+
+- name: Show role creation response
+  debug:
+    var: role_creation
+
 
 - name: Check if users exist
   ansible.builtin.uri:
@@ -95,7 +101,7 @@
       readOnly: false
       externalRoles: []
       roles:
-        - "myapp-developer-role"
+        - "{{ role_name }}"
       password: "{{ developer_password }}"
     return_content: yes
     status_code: [200, 201]
