@@ -5,7 +5,7 @@
     nexus_admin_pass: "{{ nexus_password.stdout | default('admin123') }}"
     repo_prefix: "myapp-"
     role_name: "myapp-developer-role"
-    developer_username: "{{ your_developer_username | default('{{ role_name }}') }}"
+    developer_username: "{{ your_developer_username | default( role_name ) }}"
     developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"
     developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
     nexus_api_url: "{{ nexus_base_url }}/service/rest/v1"
@@ -70,7 +70,7 @@
 
 - name: Show role creation response
   debug:
-    var: role_check.status
+    var: role_creation
 
 
 - name: Check if users exist
