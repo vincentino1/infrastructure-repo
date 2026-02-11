@@ -66,11 +66,11 @@
     status_code: [200, 201]
     return_content: yes
   register: role_creation
-  when: role_check.status_code == 404
+  when: role_check.status == 404
 
 - name: Show role creation response
   debug:
-    var: role_creation
+    var: role_check.status
 
 
 - name: Check if users exist
