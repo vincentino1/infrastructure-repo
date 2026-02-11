@@ -3,6 +3,7 @@ your_developer_password: jenkins123
 your_developer_email: myapp-developer@test.com
 
 nexus_base_url: "http://10.0.10.209:8081"
+role_name: "myapp-developer-role"
 
 
 
