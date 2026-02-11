@@ -7,7 +7,7 @@
     developer_username: "{{ your_developer_username | default('myapp-developer-role') }}"
     developer_password: "{{ your_developer_password | default('ChangeMeSecure123!') }}"
     developer_email: "{{ your_developer_email | default('myapp-developer@yourcompany.com') }}"
-    nexus_api_url: "http://{{ nexus_host }}:8081/service/rest/v1"
+    nexus_api_url: "{{ nexus_base_url }}/service/rest/v1/repositories"
 
 - name: Check if role 'myapp-developer-role' exists
   ansible.builtin.uri:
@@ -61,7 +61,7 @@
     return_content: yes
   when: role_check.status == 201
 
-- name: Check if developer user exists
+- name: Check if users exist
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/users"
     method: GET

@@ -1,10 +1,8 @@
 your_developer_username: jenkins
 your_developer_password: jenkins123
 your_developer_email: myapp-developer@test.com
-nexus_host: "10.0.10.209"
 
-registry_domain: "16-52-79-103.sslip.io"
-nexus_public_url: "https://{{ registry_domain }}"
+nexus_base_url: "http://10.0.10.209:8081"
 
 
 
