@@ -15,6 +15,18 @@
     name: docker
     state: restarted
 
+- name: Copy Nexus certificate to system CA directory (Jenkins)
+  ansible.builtin.copy:
+    src: "{{ cert_src }}"
+    dest: /usr/local/share/ca-certificates/nexus.crt
+    mode: "0644"
+    remote_src: yes
+  register: cert_copy
+
+- name: Update system CA certificates (Jenkins)
+  ansible.builtin.command: update-ca-certificates
+  when: cert_copy.changed
+
 - name: Verify Docker can access registry
   ansible.builtin.command: docker login {{ registry_domain }} -u "{{ docker_registry_username }}" -p "{{ docker_registry_password }}" # ← Inputs from Step 3
   register: login_result

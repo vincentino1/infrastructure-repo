@@ -142,4 +142,4 @@ After setting up the proxy server for SSL termination, you need to configure the
 3. **Run Ansible Playbook to Trust Certificate**
    
 ```bash
-   ansible-playbook -i inventory/hosts.ini playbooks/trust_cert_jenkins.yml --ask-vault-pass
+   ansible-playbook -i inventory/hosts.ini playbooks/jenkins_trust_cert.yml --ask-vault-pass
