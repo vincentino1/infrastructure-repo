@@ -6,7 +6,7 @@
 
 - name: Copy Nexus certificate from bastion to Docker trust store
   ansible.builtin.copy:
-    src: /tmp/nexus.crt
+    src: "{{ cert_src }}"
     dest: "{{ docker_certs_dir }}/ca.crt"
     owner: root
     group: root
@@ -14,7 +14,7 @@
 
 - name: Copy Nexus certificate to system CA directory
   ansible.builtin.copy:
-    src: /tmp/nexus.crt
+    src: "{{ cert_src }}"
     dest: /usr/local/share/ca-certificates/nexus.crt
     owner: root
     group: root

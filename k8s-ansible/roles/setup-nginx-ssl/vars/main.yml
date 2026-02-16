@@ -2,6 +2,7 @@ nexus_server_ip: "10.0.10.91"          # internal IP of the Nexus server
 registry_domain: "3-98-125-121.sslip.io" # Replace with your public DNS, i.e nginx DNS
 keystore_pass: "changeit"
 key_alias: "nexus"
+cert_src: "/tmp/nexus.crt"       # Path where the Nexus certificate will be copied on the Jenkins server (Docker client)
 docker_hosted_repo: "myapp-docker-hosted"
 docker_group_repo: "myapp-docker-group"
 Public_certificate_path: "/etc/nginx/certs/nexus.crt"

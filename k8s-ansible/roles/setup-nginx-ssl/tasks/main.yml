@@ -107,7 +107,7 @@
 - name: Fetch Nexus certificate to controller
   ansible.builtin.fetch:
     src: /etc/nginx/certs/nexus.crt
-    dest: /tmp/nexus.crt
+    dest: "{{ cert_src }}"
     flat: yes
 
 - name: Remove default NGINX site if present
