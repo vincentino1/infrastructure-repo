@@ -2,33 +2,39 @@
   ansible.builtin.file:
     path: "{{ docker_certs_dir }}"
     state: directory
-    mode: "0755"
+    mode: '0755'
 
-- name: Copy cert to Docker trust store (as ca.crt)
+- name: Copy certificate to Docker trust store (as ca.crt)
   ansible.builtin.copy:
     src: "{{ cert_src }}"
     dest: "{{ docker_certs_dir }}/ca.crt"
-    mode: "0644"
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: Restart Docker service to apply trust
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-
-- name: Copy Nexus certificate to system CA directory (Jenkins)
+- name: Copy Nexus certificate to system CA directory (for Jenkins)
   ansible.builtin.copy:
     src: "{{ cert_src }}"
     dest: /usr/local/share/ca-certificates/nexus.crt
-    mode: "0644"
-    remote_src: yes
-  register: cert_copy
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: Update system CA certificates (Jenkins)
-  ansible.builtin.command: update-ca-certificates
-  when: cert_copy.changed
+- name: Update system CA certificates
+  ansible.builtin.command:
+    cmd: update-ca-certificates
+  register: ca_update
+  changed_when: "'n updated' in ca_update.stdout"
+
+- name: Restart Docker service to apply new trust
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+  when: ca_update.changed
 
 - name: Verify Docker can access registry
-  ansible.builtin.command: docker login {{ registry_domain }} -u "{{ docker_registry_username }}" -p "{{ docker_registry_password }}" # ← Inputs from Step 3
+  ansible.builtin.command:
+    cmd: docker login {{ registry_domain }} -u "{{ docker_registry_username }}" -p "{{ docker_registry_password }}"
   register: login_result
   ignore_errors: true
   changed_when: false

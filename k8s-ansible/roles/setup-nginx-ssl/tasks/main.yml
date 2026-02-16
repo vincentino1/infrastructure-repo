@@ -1,10 +1,9 @@
----
 - name: Install required packages
   ansible.builtin.apt:
     name:
       - nginx
       - openssl
-      - openjdk-17-jre-headless   # minimal Java - provides keytool without full JDK
+      - openjdk-17-jre-headless  # minimal Java - provides keytool without full JDK
     state: present
     update_cache: yes
 
@@ -35,6 +34,7 @@
     creates: /etc/nginx/certs/nexus-keystore.p12
   register: keystore_generation
   changed_when: keystore_generation.rc == 0
+  check_mode: no   # ensures keytool actually runs when needed
 
 - name: Export public certificate in PEM format
   ansible.builtin.command: >
@@ -47,6 +47,12 @@
   args:
     creates: /etc/nginx/certs/nexus.crt
 
+- name: Fetch Nexus certificate to Ansible controller
+  ansible.builtin.fetch:
+    src: /etc/nginx/certs/nexus.crt
+    dest: /tmp/nexus.crt
+    flat: yes
+
 - name: Copy Nexus certificate to system CA directory
   ansible.builtin.copy:
     src: /etc/nginx/certs/nexus.crt
@@ -54,7 +60,6 @@
     owner: root
     group: root
     mode: '0644'
-    remote_src: yes
   register: cert_copy
 
 - name: Update system CA certificates
@@ -98,6 +103,7 @@
     dest: /etc/nginx/sites-enabled/nexus.conf
     state: link
     force: yes
+  notify: Reload NGINX
 
 - name: Remove default NGINX site if present
   ansible.builtin.file:
@@ -117,4 +123,3 @@
     state: started
     enabled: yes
     daemon_reload: yes
-
