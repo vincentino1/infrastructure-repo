@@ -40,34 +40,11 @@
       name: "{{ role_id }}"
       description: "Developer access to myapp repos"
       privileges:
-        - "nx-repository-view-maven2-myapp-maven-hosted-read"
-        - "nx-repository-view-maven2-myapp-maven-hosted-browse"
-        - "nx-repository-view-maven2-myapp-maven-proxy-read"
-        - "nx-repository-view-maven2-myapp-maven-proxy-browse"
-        - "nx-repository-view-maven2-myapp-maven-group-read"
-        - "nx-repository-view-maven2-myapp-maven-group-browse"
-        - "nx-repository-view-npm-myapp-npm-hosted-read"
-        - "nx-repository-view-npm-myapp-npm-hosted-browse"
-        - "nx-repository-view-npm-myapp-npm-proxy-read"
-        - "nx-repository-view-npm-myapp-npm-proxy-browse"
-        - "nx-repository-view-npm-myapp-npm-group-read"
-        - "nx-repository-view-npm-myapp-npm-group-browse"
-        - "nx-repository-view-docker-myapp-docker-hosted-read"
-        - "nx-repository-view-docker-myapp-docker-hosted-browse"
-        - "nx-repository-view-docker-myapp-docker-hosted-add"
-        - "nx-repository-view-docker-myapp-docker-hosted-edit"
-        - "nx-repository-view-docker-myapp-docker-hosted-delete"
-        - "nx-repository-view-docker-myapp-docker-proxy-read"
-        - "nx-repository-view-docker-myapp-docker-proxy-browse"
-        - "nx-repository-view-docker-myapp-docker-group-read"
-        - "nx-repository-view-docker-myapp-docker-group-browse"
-
-  
-  # - "nx-repository-view-*-myapp-*-read"
-  # - "nx-repository-view-*-myapp-*-browse"
-  # - "nx-repository-view-*-myapp-*-add"
-  # - "nx-repository-view-*-myapp-*-edit"
-  # - "nx-repository-view-*-myapp-*-delete"
+        - nx-repository-view-*-myapp-*-read
+        - nx-repository-view-*-myapp-*-browse
+        - nx-repository-view-*-myapp-*-add
+        - nx-repository-view-*-myapp-*-edit
+        - nx-repository-view-*-myapp-*-delete
 
       roles: []
     status_code: [200, 201,204]
