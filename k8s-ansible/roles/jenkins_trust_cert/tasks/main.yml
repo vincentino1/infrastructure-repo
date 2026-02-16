@@ -11,7 +11,6 @@
     owner: root
     group: root
     mode: '0644'
-    remote_src: yes
 
 - name: Copy Nexus certificate to system CA directory (for Jenkins)
   ansible.builtin.copy:
@@ -20,10 +19,10 @@
     owner: root
     group: root
     mode: '0644'
-    remote_src: yes
 
 - name: Update system CA certificates
-  ansible.builtin.command: update-ca-certificates
+  ansible.builtin.command:
+    cmd: update-ca-certificates
   register: ca_update
   changed_when: "'n updated' in ca_update.stdout"
 
