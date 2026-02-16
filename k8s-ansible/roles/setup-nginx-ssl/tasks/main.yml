@@ -34,7 +34,7 @@
     creates: /etc/nginx/certs/nexus-keystore.p12
   register: keystore_generation
   changed_when: keystore_generation.rc == 0
-  check_mode: no   # ensures keytool actually runs when needed
+  
 
 - name: Export public certificate in PEM format
   ansible.builtin.command: >
@@ -47,26 +47,7 @@
   args:
     creates: /etc/nginx/certs/nexus.crt
 
-- name: Fetch Nexus certificate to Ansible controller
-  ansible.builtin.fetch:
-    src: /etc/nginx/certs/nexus.crt
-    dest: /tmp/nexus.crt
-    flat: yes
 
-- name: Copy Nexus certificate to system CA directory
-  ansible.builtin.copy:
-    src: /etc/nginx/certs/nexus.crt
-    dest: /usr/local/share/ca-certificates/nexus.crt
-    owner: root
-    group: root
-    mode: '0644'
-    remote_src: yes
-  register: cert_copy
-  
-
-- name: Update system CA certificates
-  ansible.builtin.command: update-ca-certificates
-  when: cert_copy.changed
 
 - name: Export private key (unencrypted PEM format for NGINX)
   ansible.builtin.command: >
@@ -89,6 +70,21 @@
     - { path: /etc/nginx/certs/nexus.key, mode: '0600' }
     - { path: /etc/nginx/certs/nexus.crt, mode: '0644' }
     - { path: /etc/nginx/certs/nexus-keystore.p12, mode: '0600' }
+
+- name: Copy Nexus certificate to system CA directory
+  ansible.builtin.copy:
+    src: /etc/nginx/certs/nexus.crt
+    dest: /usr/local/share/ca-certificates/nexus.crt
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: yes
+  register: cert_copy
+  
+
+- name: Update system CA certificates
+  ansible.builtin.command: update-ca-certificates
+  when: cert_copy.changed
 
 - name: Create NGINX configuration file for Nexus (with Docker support)
   ansible.builtin.template:

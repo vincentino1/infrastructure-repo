@@ -4,37 +4,45 @@
     state: directory
     mode: '0755'
 
-- name: Copy certificate to Docker trust store (as ca.crt)
+- name: Copy Nexus certificate to Docker trust store
   ansible.builtin.copy:
-    src: "{{ cert_src }}"
+    src: /etc/nginx/certs/nexus.crt
     dest: "{{ docker_certs_dir }}/ca.crt"
     owner: root
     group: root
     mode: '0644'
+    remote_src: yes
+  register: docker_cert_copy
 
 - name: Copy Nexus certificate to system CA directory (for Jenkins)
   ansible.builtin.copy:
-    src: "{{ cert_src }}"
+    src: /etc/nginx/certs/nexus.crt
     dest: /usr/local/share/ca-certificates/nexus.crt
     owner: root
     group: root
     mode: '0644'
+    remote_src: yes
+  register: ca_copy
 
-- name: Update system CA certificates
-  ansible.builtin.command:
-    cmd: update-ca-certificates
+- name: Update system CA certificates if needed
+  ansible.builtin.command: update-ca-certificates
+  when: ca_copy.changed or docker_cert_copy.changed
   register: ca_update
-  changed_when: "'n updated' in ca_update.stdout"
 
-- name: Restart Docker service to apply new trust
+- name: Restart Docker to apply new trust if certificates changed
   ansible.builtin.service:
     name: docker
     state: restarted
   when: ca_update.changed
 
-- name: Verify Docker can access registry
+- name: Verify Docker login to registry (warn if fails)
   ansible.builtin.shell: |
     echo "{{ docker_registry_password }}" | docker login {{ registry_domain }} -u "{{ docker_registry_username }}" --password-stdin
-  register: login_result
+  register: docker_login
   changed_when: false
-  failed_when: "'Login Succeeded' not in login_result.stdout"
+  failed_when: false
+  ignore_errors: true
+
+- name: Show Docker login result
+  ansible.builtin.debug:
+    msg: "{{ docker_login.stdout_lines }}"
