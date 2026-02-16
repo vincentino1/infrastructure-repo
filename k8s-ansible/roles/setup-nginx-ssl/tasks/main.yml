@@ -61,6 +61,7 @@
     group: root
     mode: '0644'
   register: cert_copy
+  remote_src: yes
 
 - name: Update system CA certificates
   ansible.builtin.command: update-ca-certificates
