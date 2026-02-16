@@ -25,7 +25,7 @@
     owner: jenkins
     group: jenkins
     mode: '0644'
-  notify: restart jenkins
+  notify: Restart Jenkins
 
 - name: Wait for Jenkins to start up
   ansible.builtin.uri:
