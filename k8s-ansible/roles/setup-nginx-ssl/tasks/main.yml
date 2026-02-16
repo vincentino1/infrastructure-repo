@@ -47,6 +47,19 @@
   args:
     creates: /etc/nginx/certs/nexus.crt
 
+- name: Copy Nexus certificate to system CA directory
+  ansible.builtin.copy:
+    src: /etc/nginx/certs/nexus.crt
+    dest: /usr/local/share/ca-certificates/nexus.crt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Update system CA certificates
+  ansible.builtin.command: update-ca-certificates
+  args:
+    warn: false
+
 - name: Export private key (unencrypted PEM format for NGINX)
   ansible.builtin.command: >
     openssl pkcs12
