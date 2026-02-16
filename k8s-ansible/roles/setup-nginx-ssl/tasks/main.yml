@@ -95,6 +95,23 @@
     group: root
   notify: Reload NGINX
 
+# On proxy-server
+- name: Fetch Nexus certificate to controller
+  ansible.builtin.fetch:
+    src: /etc/nginx/certs/nexus.crt
+    dest: /tmp/nexus.crt
+    flat: yes
+
+# On jenkins-server
+- name: Copy Nexus certificate to Docker trust store
+  ansible.builtin.copy:
+    src: /tmp/nexus.crt
+    dest: "{{ docker_certs_dir }}/ca.crt"
+    owner: root
+    group: root
+    mode: '0644'
+
+
 - name: Enable NGINX site
   ansible.builtin.file:
     src: /etc/nginx/sites-available/nexus.conf
