@@ -125,5 +125,5 @@ ansible-playbook -i inventory/hosts.ini playbooks/jenkins_plugins_cred.yml --ask
 ### NOTE: After setting up the proxy server for ssl termination, Configure Docker Daemon in jenkins server or agent to trust the certificate.
 
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/trust_cert_jenkins.yml 
+ansible-playbook -i inventory/hosts.ini playbooks/trust_cert_jenkins.yml --ask-vault-pass
 ```
