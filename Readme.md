@@ -98,9 +98,9 @@ ansible-playbook -i inventory/hosts.ini playbooks/db.yml
 
 ansible-playbook -i inventory/hosts.ini playbooks/nexus.yml
 
-ansible-playbook -i inventory/hosts.ini playbooks/proxy.yml
+ansible-playbook -i inventory/hosts.ini playbooks/nexus_repo_config.yml --ask-vault-pass
 
-ansible-playbook -i inventory/hosts.ini playbooks/nexus_repo_config.yml
+ansible-playbook -i inventory/hosts.ini playbooks/proxy.yml
 ```
 
 ### Setup Jenkins Server 
@@ -113,6 +113,8 @@ ansible-playbook -i inventory/hosts.ini playbooks/jenkins.yml
 ```bash
 cd k8s-ansible
 ansible-vault encrypt group_vars/jenkins/vault.yml
+ansible-vault view group_vars/jenkins/vault.yml
+ansible-vault edit group_vars/jenkins/vault.yml
 ```
 
 ### NOTE: Make sure to login with Jenkins Initial password and create username and Password for authentication before running this command otherwise you will get Error **"HTTP Error 401: Unauthorized"**.

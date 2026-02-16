@@ -22,11 +22,6 @@
   register: role_check
   changed_when: false
 
-- name: Show role check response
-  debug:
-    var: role_check
-
-
 - name: Create role 'myapp-developer-role'
   ansible.builtin.uri:
     url: "{{ nexus_api_url }}/security/roles"
@@ -67,10 +62,6 @@
     return_content: yes
   register: role_creation
   when: role_check.status == 404
-
-- name: Show role creation response
-  debug:
-    var: role_creation
 
 
 - name: Check if users exist

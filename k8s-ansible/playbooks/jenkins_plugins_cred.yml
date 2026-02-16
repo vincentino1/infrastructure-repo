@@ -2,4 +2,5 @@
   hosts: jenkins_server
   become: yes
   roles:
-    - jenkins_plugins
+    - jenkins_plugins_cred
+    
