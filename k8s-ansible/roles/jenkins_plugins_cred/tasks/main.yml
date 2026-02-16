@@ -10,6 +10,14 @@
   loop: "{{ jenkins_plugins}}"
   notify: Restart Jenkins
 
+- name: Ensure Jenkins init.groovy.d directory exists
+  file:
+    path: /var/lib/jenkins/init.groovy.d
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0755'
+
 - name: Deploy credentials Groovy init script
   template:
     src: credentials.groovy.j2
