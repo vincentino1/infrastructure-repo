@@ -31,15 +31,15 @@ module "vpc" {
   nat_gateway_tags = var.nat_gateway_tags
   igw_tags         = var.igw_tags
 
-  enable_nat_gateway     = true
-  single_nat_gateway     = true
-  enable_dns_hostnames   = true
-  enable_dns_support     = true
+  enable_nat_gateway      = true
+  single_nat_gateway      = true
+  enable_dns_hostnames    = true
+  enable_dns_support      = true
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
-  Name = "${var.environment}-k8s-vpc"
-})
+    Name = "${var.environment}-k8s-vpc"
+  })
 
 }
 
@@ -54,7 +54,7 @@ module "vpc" {
 #   description = "Security group for Kubernetes control plane"
 #   vpc_id      = module.vpc.vpc_id
 
- 
+
 #   ingress_with_source_security_group_id = [
 #     {
 #       from_port                = 6443
@@ -175,7 +175,7 @@ module "nexus_sg" {
       protocol    = "tcp"
       description = "Docker Registry"
       cidr_blocks = var.vpc_cidr
-    }, 
+    },
     # {
     #   from_port                = 8081
     #   to_port                  = 8081
@@ -184,24 +184,32 @@ module "nexus_sg" {
     #   cidr_blocks = var.vpc_cidr
     # }
   ]
-  
+
   ingress_with_source_security_group_id = [
-    
+
     {
       from_port                = 8081
       to_port                  = 8081
       protocol                 = "tcp"
       description              = "Nexus acces from Nginx proxy server "
       source_security_group_id = module.proxy_sg.security_group_id
-      
+
     },
-    
+
     {
-      from_port = 8081
-      to_port   = 8081
-      protocol  = "tcp"
-      description = "Allow Nexus access from bastion for SSH tunnel"
+      from_port                = 8081
+      to_port                  = 8081
+      protocol                 = "tcp"
+      description              = "Allow Nexus access from bastion for SSH tunnel"
       source_security_group_id = module.bastion_sg.security_group_id
+    },
+
+    {
+      from_port                = 8081
+      to_port                  = 8081
+      protocol                 = "tcp"
+      description              = "Allow Nexus access from Jenkins"
+      source_security_group_id = module.jenkins_sg.security_group_id
     },
 
     {
@@ -210,7 +218,7 @@ module "nexus_sg" {
       protocol                 = "tcp"
       description              = "SSH from bastion"
       source_security_group_id = module.bastion_sg.security_group_id
-      
+
     }
   ]
 
@@ -237,14 +245,14 @@ module "jenkins_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
-      {
+    {
       from_port   = 8080
       to_port     = 8080
       protocol    = "tcp"
       description = "Jenkins"
       cidr_blocks = var.vpc_cidr
-      }
-    ]
+    }
+  ]
 
   ingress_with_source_security_group_id = [
     {
@@ -262,7 +270,7 @@ module "jenkins_sg" {
       description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }
-  ] 
+  ]
 
   tags = merge(var.tags, {
     Name = "${var.environment}-jenkins-sg"
@@ -280,23 +288,23 @@ module "proxy_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
-      {
+    {
       from_port   = 80
       to_port     = 80
       protocol    = "tcp"
       description = "proxy"
       cidr_blocks = "0.0.0.0/0"
-      },
-     
-      {
+    },
+
+    {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
       description = "proxy"
       cidr_blocks = "0.0.0.0/0"
-      }
+    }
 
-    ]
+  ]
 
   ingress_with_source_security_group_id = [
     {
@@ -314,7 +322,7 @@ module "proxy_sg" {
       description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }
-  ] 
+  ]
 
   tags = merge(var.tags, {
     Name = "${var.environment}-proxy-sg"
@@ -356,8 +364,8 @@ module "proxy_sg" {
 #       cidr_blocks = "0.0.0.0/0"
 #     }
 #   ]
-    
-  
+
+
 #   tags = merge(var.tags, {
 #     Name = "${var.environment}-postgresql-sg"
 #   })
@@ -452,7 +460,7 @@ module "bastion_sg" {
 #     volume_type = "gp3"
 #     volume_size = var.worker_volume_size
 #     }
-  
+
 #   tags = merge(
 #     var.tags,
 #     {
@@ -467,8 +475,8 @@ module "jenkins-server" {
 
   name                   = "${var.environment}-jenkins-server"
   instance_type          = var.jenkins_instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name        
+  ami                    = data.aws_ami.ubuntu.id
+  key_name               = var.ssh_key_name
   vpc_security_group_ids = [module.jenkins_sg.security_group_id]
   monitoring             = true
   subnet_id              = module.vpc.private_subnets[1]
@@ -484,11 +492,11 @@ module "jenkins-server" {
     volume_type = "gp3"
     volume_size = var.jenkins_volume_size
   }
-  
+
   tags = merge(
     var.tags,
     {
-      Role        = "Jenkins-server"
+      Role = "Jenkins-server"
     }
   )
 }
@@ -499,8 +507,8 @@ module "nexus-server" {
 
   name                   = "${var.environment}-nexus-server"
   instance_type          = var.nexus_instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name        
+  ami                    = data.aws_ami.ubuntu.id
+  key_name               = var.ssh_key_name
   vpc_security_group_ids = [module.nexus_sg.security_group_id]
   monitoring             = true
   subnet_id              = module.vpc.private_subnets[0]
@@ -519,7 +527,7 @@ module "nexus-server" {
   tags = merge(
     var.tags,
     {
-      Role        = "Nexus-server"
+      Role = "Nexus-server"
     }
   )
 }
@@ -530,8 +538,8 @@ module "proxy-server" {
 
   name                   = "${var.environment}-proxy-server"
   instance_type          = var.proxy_instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name      
+  ami                    = data.aws_ami.ubuntu.id
+  key_name               = var.ssh_key_name
   vpc_security_group_ids = [module.proxy_sg.security_group_id]
   monitoring             = true
   subnet_id              = module.vpc.public_subnets[1]
@@ -550,7 +558,7 @@ module "proxy-server" {
   tags = merge(
     var.tags,
     {
-      Role        = "proxy-server"
+      Role = "proxy-server"
     }
   )
 }
@@ -561,8 +569,8 @@ module "bastion-host" {
 
   name                   = "${var.environment}-bastion-host"
   instance_type          = var.bastion_instance_type
-  ami                    = data.aws_ami.ubuntu.id 
-  key_name               = var.ssh_key_name        
+  ami                    = data.aws_ami.ubuntu.id
+  key_name               = var.ssh_key_name
   vpc_security_group_ids = [module.bastion_sg.security_group_id]
   monitoring             = true
   subnet_id              = module.vpc.public_subnets[0]
@@ -582,7 +590,7 @@ module "bastion-host" {
   tags = merge(
     var.tags,
     {
-      Role        = "bastion-host"
+      Role = "bastion-host"
     }
   )
 }

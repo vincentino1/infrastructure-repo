@@ -6,13 +6,13 @@ terraform {
     }
   }
 
-# backend "s3" {
-#     bucket        = "terraform-kubeadm-state-s3-bucket"
-#     key           = "project/terraform.tfstate"
-#     region        = "ca-central-1"
-#     encrypt       = true
-#     use_lockfile = true # enables native S3 locking (no DynamoDB table needed)
-#   }
+backend "s3" {
+    bucket        = "terraform-kubeadm-state-s3-bucket"
+    key           = "project/terraform.tfstate"
+    region        = "ca-central-1"
+    encrypt       = true
+    use_lockfile = true # enables native S3 locking (no DynamoDB table needed)
+  }
 }
 
 provider "aws" {

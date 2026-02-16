@@ -1,8 +1,8 @@
-registry_domain: "16-52-79-103.sslip.io"  # ← Input: proxy server domain registry  
+registry_domain: "3-98-125-121.sslip.io"  # ← Input: proxy server domain registry  
 cert_src: "/tmp/nexus.crt"       # ← Input: e.g., /tmp/nexus.crt (copy from proxy first)
 docker_certs_dir: "/etc/docker/certs.d/{{ registry_domain }}"
-docker_registry_username: "jenkins"
-docker_registry_password: "jenkins123"
+docker_registry_username: "{{ vault_nexus_username }}"
+docker_registry_password: "{{ vault_nexus_password }}"
 
 
 # Log into the proxy host from the bastion host, then manually copy the file at this path /etc/nginx/certs/nexus.crt

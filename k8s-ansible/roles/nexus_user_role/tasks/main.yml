@@ -62,6 +62,13 @@
         - "nx-repository-view-docker-myapp-docker-group-read"
         - "nx-repository-view-docker-myapp-docker-group-browse"
 
+  
+  # - "nx-repository-view-*-myapp-*-read"
+  # - "nx-repository-view-*-myapp-*-browse"
+  # - "nx-repository-view-*-myapp-*-add"
+  # - "nx-repository-view-*-myapp-*-edit"
+  # - "nx-repository-view-*-myapp-*-delete"
+
       roles: []
     status_code: [200, 201,204]
     return_content: yes
