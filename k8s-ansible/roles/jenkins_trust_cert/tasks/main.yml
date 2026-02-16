@@ -33,8 +33,8 @@
   when: ca_update.changed
 
 - name: Verify Docker can access registry
-  ansible.builtin.command:
-    cmd: docker login {{ registry_domain }} -u "{{ docker_registry_username }}" -p "{{ docker_registry_password }}"
+  ansible.builtin.shell: |
+    echo "{{ docker_registry_password }}" | docker login {{ registry_domain }} -u "{{ docker_registry_username }}" --password-stdin
   register: login_result
   ignore_errors: true
   changed_when: false
