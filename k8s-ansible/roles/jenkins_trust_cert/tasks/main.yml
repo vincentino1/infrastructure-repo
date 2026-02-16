@@ -1,48 +1,37 @@
-- name: Create Docker certs directory for registry
-  ansible.builtin.file:
-    path: "{{ docker_certs_dir }}"
-    state: directory
-    mode: '0755'
 
-- name: Copy Nexus certificate to Docker trust store
-  ansible.builtin.copy:
-    src: /tmp/nexus.crt
-    dest: "{{ docker_certs_dir }}/ca.crt"
-    owner: root
-    group: root
-    mode: '0644'
-    remote_src: yes
-  register: docker_cert_copy
+    - name: Create Docker certs directory
+      ansible.builtin.file:
+        path: "{{ docker_certs_dir }}"
+        state: directory
+        mode: '0755'
 
-- name: Copy Nexus certificate to system CA directory (for Jenkins)
-  ansible.builtin.copy:
-    src:  /tmp/nexus.crt
-    dest: /usr/local/share/ca-certificates/nexus.crt
-    owner: root
-    group: root
-    mode: '0644'
-    remote_src: yes
-  register: ca_copy
+    - name: Copy Nexus certificate from bastion to Docker trust store
+      ansible.builtin.copy:
+        src: /tmp/nexus.crt      # copy from bastion (controller)
+        dest: "{{ docker_certs_dir }}/ca.crt"
+        owner: root
+        group: root
+        mode: '0644'
 
-- name: Update system CA certificates if needed
-  ansible.builtin.command: update-ca-certificates
-  when: ca_copy.changed or docker_cert_copy.changed
-  register: ca_update
+    - name: Copy Nexus certificate to system CA directory
+      ansible.builtin.copy:
+        src: /tmp/nexus.crt
+        dest: /usr/local/share/ca-certificates/nexus.crt
+        owner: root
+        group: root
+        mode: '0644'
 
-- name: Restart Docker to apply new trust if certificates changed
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-  when: ca_update.changed
+    - name: Update system CA certificates
+      ansible.builtin.command: update-ca-certificates
 
-- name: Verify Docker login to registry (warn if fails)
-  ansible.builtin.shell: |
-    echo "{{ docker_registry_password }}" | docker login {{ registry_domain }} -u "{{ docker_registry_username }}" --password-stdin
-  register: docker_login
-  changed_when: false
-  failed_when: false
-  ignore_errors: true
+    - name: Restart Docker to apply trust
+      ansible.builtin.service:
+        name: docker
+        state: restarted
 
-- name: Show Docker login result
-  ansible.builtin.debug:
-    msg: "{{ docker_login.stdout_lines }}"
+    - name: Verify Docker login
+      ansible.builtin.shell: |
+        echo "{{ docker_registry_password }}" | docker login {{ registry_domain }} -u "{{ docker_registry_username }}" --password-stdin
+      register: docker_login
+      changed_when: false
+      failed_when: "'Login Succeeded' not in docker_login.stdout"
