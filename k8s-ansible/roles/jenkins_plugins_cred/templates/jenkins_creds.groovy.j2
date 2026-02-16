@@ -1,0 +1,55 @@
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+
+def instance = Jenkins.instance
+def store = instance.getExtensionList(
+  'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
+)[0].getStore()
+
+def domain = Domain.global()
+
+def createOrUpdate(id, description, username, password) {
+    def existing = store.getCredentials(domain).find { it.id == id }
+
+    if (existing != null) {
+        println("Updating credential: " + id)
+        store.removeCredentials(domain, existing)
+    } else {
+        println("Creating credential: " + id)
+    }
+
+    def newCred = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        id,
+        description,
+        username,
+        password
+    )
+
+    store.addCredentials(domain, newCred)
+}
+
+createOrUpdate(
+    "nexus-creds",
+    "Nexus API / Maven credential",
+    "{{ vault_nexus_user_username }}",
+    "{{ vault_nexus_user_password }}"
+)
+
+createOrUpdate(
+    "docker-registry-creds",
+    "Docker Registry credential",
+    "{{ vault_nexus_user_username }}",
+    "{{ vault_nexus_user_password }}"
+)
+
+createOrUpdate(
+    "github-creds",
+    "GitHub PAT credential",
+    "{{ vault_github_username }}",
+    "{{ vault_github_pat }}"
+)
+
+instance.save()

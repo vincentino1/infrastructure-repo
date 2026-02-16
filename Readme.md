@@ -122,8 +122,23 @@ ansible-vault edit group_vars/jenkins/vault.yml
 ```bash
 ansible-playbook -i inventory/hosts.ini playbooks/jenkins_plugins_cred.yml --ask-vault-pass
 ```
-### NOTE: After setting up the proxy server for ssl termination, Configure Docker Daemon in jenkins server or agent to trust the certificate.
+### NOTE
+After setting up the proxy server for SSL termination, you need to configure the Docker daemon on the Jenkins server or agent to trust the SSL certificate.
 
+---
+
+## Steps to Follow
+
+1. **Configure Nexus Base URL**
+   - Log in to the Nexus UI.
+   - Go to `System` → `Capabilities`.
+   - Create a new capability to set the Nexus base URL.
+
+2. **Configure Docker Repositories**
+   - Since we are using **Path-based routing**, go into each Docker repository created in Nexus.
+   - Make sure to select **Path-based routing** for each repo, then save the changes.
+
+3. **Run Ansible Playbook to Trust Certificate**
+   
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/trust_cert_jenkins.yml --ask-vault-pass
-```
+   ansible-playbook -i inventory/hosts.ini playbooks/trust_cert_jenkins.yml --ask-vault-pass

@@ -1,4 +1,3 @@
----
 - name: Install Jenkins plugins
   community.general.jenkins_plugin:
     name: "{{ item }}"
@@ -7,7 +6,7 @@
     url_username: "{{ jenkins_admin_user }}"
     url_password: "{{ jenkins_admin_password }}"
     with_dependencies: true
-  loop: "{{ jenkins_plugins}}"
+  loop: "{{ jenkins_plugins }}"
   notify: Restart Jenkins
 
 - name: Ensure Jenkins init.groovy.d directory exists
@@ -21,7 +20,7 @@
 - name: Deploy credentials Groovy init script
   template:
     src: credentials.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/01-credentials.groovy
+    dest: /var/lib/jenkins/init.groovy.d/jenkins_creds.groovy
     owner: jenkins
     group: jenkins
     mode: '0644'
@@ -31,12 +30,12 @@
   ansible.builtin.uri:
     url: "{{ jenkins_url }}"
     status_code: 
-     - 200
-     - 403
+      - 200
+      - 403
     timeout: 5
   register: jenkins_service_status
   retries: 60
   delay: 5
   until: >
-        'status' in jenkins_service_status and
-        jenkins_service_status['status'] in [200, 403]
+    'status' in jenkins_service_status and
+    jenkins_service_status.status in [200, 403]
