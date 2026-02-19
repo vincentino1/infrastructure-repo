@@ -2,7 +2,7 @@ role_id: "myapp-developer-role"
 your_developer_username: "{{ vault_nexus_user_username }}"
 your_developer_password: "{{ vault_nexus_user_password }}"
 your_developer_email: myapp-developer@test.com
-nexus_base_url: "http://10.0.10.91:8081"
+nexus_base_url: "http://10.0.10.236:8081"
 
 
 

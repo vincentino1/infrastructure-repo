@@ -1,4 +1,4 @@
-nexus_upstream_host: "10.0.10.91"          # internal IP of the Nexus server
+nexus_upstream_host: "10.0.10.236"          # internal IP of the Nexus server
 nexus_upstream_port: 8081
 registry_domain: repo.vinny-dev.com # Replace with your DNS pointing to nginx ip
 letsencrypt_email: admin@repo.vinny-dev.com
