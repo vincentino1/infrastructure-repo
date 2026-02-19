@@ -1,8 +1,11 @@
-# NGINX config template – fixed for "cannot have URI part" error
-# Proxy server separate, Nexus at {{ nexus_upstream_host }}:{{ nexus_upstream_port }}
+# NGINX config – path-based routing for single-domain Nexus Docker (no method rewrite)
+# Pushes to /v2/myapp-docker-hosted/... → hosted repo
+# Pulls from other repos (e.g. /v2/myapp-docker-group/...) → group repo
+# No more "Not a docker request" on push initiation
 
-map $request_method $nexus_base {
-    default http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+map $request_uri $docker_upstream {
+    ~^/v2/{{ docker_hosted_repo }}(/.*)?$  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
+    default                                        http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
 }
 
 server {
@@ -37,7 +40,6 @@ server {
 
     client_max_body_size 10G;
 
-    # Nexus UI / main paths
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
@@ -53,12 +55,7 @@ server {
     }
 
     location /v2/ {
-        proxy_pass $nexus_base;
-
-        # Rewrite ONLY for push methods to hosted repo
-        if ($request_method ~ ^(POST|PUT|PATCH|DELETE)$) {
-            rewrite ^/v2/(.*)$ /repository/{{ docker_hosted_repo }}/$1 break;
-        }
+        proxy_pass $docker_upstream;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -76,9 +73,9 @@ server {
         proxy_send_timeout 600;
     }
 
-    # Optional debug endpoints (no rewrite)
+    # Optional debug endpoints
     location ~ ^/v2/(_catalog|_ping|token.*)$ {
-        proxy_pass $nexus_base;
+        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Port $server_port;
