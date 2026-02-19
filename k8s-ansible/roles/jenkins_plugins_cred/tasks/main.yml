@@ -47,17 +47,22 @@
     mode: '0644'
   notify: Restart Jenkins
 
-- name: Set Jenkins global environment variables
-  ansible.builtin.lineinfile:
-    path: /etc/default/jenkins
-    regexp: '^{{ item.key }}='
-    line: '{{ item.key }}={{ item.value }}'
-    create: yes
-    backup: yes
-  loop:
-    - { key: 'NEXUS_URL', value: '{{ nexus_url }}' }
-    - { key: 'DOCKER_REGISTRY_URL', value: '{{ docker_registry_url }}' }
-  notify: Restart Jenkins
+- name: Create systemd override directory for Jenkins
+  ansible.builtin.file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
+
+- name: Configure Jenkins environment variables via systemd override
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    content: |
+      [Service]
+      Environment="NEXUS_URL={{ nexus_url }}"
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart Jenkins
 
 - name: Wait for Jenkins to be ready after restart
   ansible.builtin.uri:
