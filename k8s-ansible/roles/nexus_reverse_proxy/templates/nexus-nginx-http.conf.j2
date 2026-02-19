@@ -4,13 +4,11 @@ Who must use HTTPS
 How big uploads can be
 How Docker traffic is handled #}
 
-# HTTP-only temporary configuration for initial Certbot validation
-
+# HTTP-only temporary configuration for Certbot validation
 server {
     listen 80;
-    server_name {{ registry_domain }}{% if enable_docker_subdomain %} {{ docker_registry_domain }}{% endif %};
+    server_name {{ registry_domain }};
 
-    # Serve Nexus over HTTP temporarily
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
         proxy_set_header Host $host;
