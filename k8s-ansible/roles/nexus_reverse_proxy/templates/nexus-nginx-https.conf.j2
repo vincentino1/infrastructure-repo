@@ -23,21 +23,36 @@ server {
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "1; mode=block";
 
-    # Allow large Docker layers
+    # Large uploads
     client_max_body_size 5G;
 
+    # -----------------------------
     # Nexus UI
+    # -----------------------------
     location / {
-        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Docker Registry endpoint
+    # -----------------------------
+    # Docker Registry (/v2/)
+    # Pulls → group repo
+    # Pushes → hosted repo
+    # -----------------------------
     location /v2/ {
-        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+        # Pulls (GET/HEAD) → group repo
+        if ($request_method ~ ^(GET|HEAD)$) {
+            proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+        }
+
+        # Pushes (POST, PUT, PATCH, DELETE) → hosted repo
+        if ($request_method !~ ^(GET|HEAD)$) {
+            proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+        }
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

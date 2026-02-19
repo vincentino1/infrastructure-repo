@@ -1,6 +1,4 @@
-- name: Reload systemd
-  ansible.builtin.command: systemctl daemon-reload
-
+---
 - name: Restart Jenkins
   ansible.builtin.service:
     name: jenkins

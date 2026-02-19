@@ -53,16 +53,25 @@
     state: directory
     mode: '0755'
 
-- name: Configure Jenkins environment variables via systemd override
+- name: Create Groovy init script for global env vars
   ansible.builtin.copy:
-    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    dest: /var/lib/jenkins/init.groovy.d/global-env.groovy
     content: |
-      [Service]
-      Environment="NEXUS_URL={{ nexus_url }}"
-    mode: '0644'
+      import jenkins.model.*
+      import hudson.slaves.EnvironmentVariablesNodeProperty
+
+      def instance = Jenkins.instance
+      def envVarsNodePropertyList = instance.globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class)
+      def envVars = envVarsNodePropertyList ? envVarsNodePropertyList[0].envVars : new java.util.HashMap()
+      envVars.put("NEXUS_URL", "{{ nexus_url }}")
+      if (!envVarsNodePropertyList) {
+          def newNodeProp = new EnvironmentVariablesNodeProperty(new hudson.slaves.EnvironmentVariablesNodeProperty.Entry("NEXUS_URL", "{{ nexus_url }}"))
+          instance.globalNodeProperties.add(newNodeProp)
+      }
+      instance.save()
   notify:
-    - Reload systemd
     - Restart Jenkins
+
 
 - name: Wait for Jenkins to be ready after restart
   ansible.builtin.uri:
