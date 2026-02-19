@@ -1,34 +1,44 @@
-# Redirect HTTP → HTTPS
+{# NGINX sits in front of Nexus and decides:
+Who goes where
+Who must use HTTPS
+How big uploads can be
+How Docker traffic is handled #}
+
+# HTTP-only temporary configuration for Certbot validation
 server {
     listen 80;
     server_name {{ registry_domain }};
-    return 301 https://$host$request_uri;
+
+    # Let Certbot validate HTTP challenge
+    location /.well-known/acme-challenge/ {
+        root /var/lib/letsencrypt;
+    }
+
+    # Redirect all other HTTP traffic to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
-# Nexus UI + Docker Registry (Single Domain)
+
 server {
     listen 443 ssl http2;
     server_name {{ registry_domain }};
 
     ssl_certificate /etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ registry_domain }}/privkey.pem;
-
-    # Modern TLS
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
-    # Security headers
     add_header Strict-Transport-Security "max-age=63072000" always;
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "1; mode=block";
-
-    # Large uploads
+    
+    # Allow large Docker uploads
     client_max_body_size 5G;
 
-    # -----------------------------
     # Nexus UI
-    # -----------------------------
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
@@ -37,19 +47,15 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # -----------------------------
-    # Docker Registry (/v2/)
-    # Pulls → group repo
-    # Pushes → hosted repo
-    # -----------------------------
+    # Docker Registry
     location /v2/ {
-        # Pulls (GET/HEAD) → group repo
-        if ($request_method ~ ^(GET|HEAD)$) {
+        # Pulls → group repo
+        limit_except POST PUT PATCH DELETE {
             proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
         }
 
-        # Pushes (POST, PUT, PATCH, DELETE) → hosted repo
-        if ($request_method !~ ^(GET|HEAD)$) {
+        # Pushes → hosted repo
+        limit_except GET HEAD {
             proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
         }
 
@@ -57,7 +63,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
         proxy_request_buffering off;
         proxy_buffering off;
     }

@@ -1,10 +1,9 @@
-nexus_upstream_host: "10.0.10.236"          # internal IP of the Nexus server
+registry_domain: repo.vinny-dev.com
+nexus_upstream_host: 10.0.10.236
 nexus_upstream_port: 8081
-registry_domain: repo.vinny-dev.com # Replace with your DNS pointing to nginx ip
-letsencrypt_email: admin@repo.vinny-dev.com
 docker_group_repo: myapp-docker-group
 docker_hosted_repo: myapp-docker-hosted
-# docker_registry_domain: registry.vinny-dev.com # Replace with your subdomain pointing to nginx ip
+letsencrypt_email: admin@repo.vinny-dev.com
 
 
 # MUST Use Separate Subdomain, Best practice:

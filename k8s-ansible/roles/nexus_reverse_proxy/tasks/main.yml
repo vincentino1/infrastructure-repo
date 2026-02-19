@@ -16,10 +16,18 @@
     state: absent
   notify: Reload NGINX
 
+- name: Ensure Certbot webroot exists
+  ansible.builtin.file:
+    path: /var/lib/letsencrypt
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
 # 3. Deploy HTTP-only config
 - name: Deploy initial HTTP-only NGINX config 
   ansible.builtin.template: 
-    src: nexus-nginx-http.conf.j2
+    src: nexus.conf.j2
     dest: /etc/nginx/sites-available/nexus.conf 
     mode: "0644" 
   notify: Reload NGINX
@@ -48,22 +56,14 @@
 # 5. Obtain Let's Encrypt certificate and update NGINX config
 - name: Obtain Let's Encrypt certificate
   ansible.builtin.command: >
-    certbot certonly --nginx
+    certbot certonly --webroot
     --non-interactive
     --agree-tos
     --email {{ letsencrypt_email }}
+    -w /var/lib/letsencrypt
     -d {{ registry_domain }}
   args:
     creates: "/etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem"
-
-
-# 6. Deploy HTTPS config
-- name: Create NGINX configuration file for Nexus
-  ansible.builtin.template:
-    src: nexus-nginx-https.conf.j2
-    dest: /etc/nginx/sites-available/nexus.conf
-    mode: '0644'
-  notify: Reload NGINX
 
 # 7. Enable auto-renewal of certificates
 - name: Enable Certbot auto-renew
