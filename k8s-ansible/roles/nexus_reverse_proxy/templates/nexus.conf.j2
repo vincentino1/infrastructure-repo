@@ -6,50 +6,63 @@ How Docker traffic is handled #}
 
 # Nexus + Docker Registry (single-domain)
 
-# Map HTTP methods → correct Docker repository
+# Step 1: Map HTTP methods → correct Docker upstream
 map $request_method $docker_upstream {
-    default  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
-    GET      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
-    HEAD     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
+    default  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+    GET      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+    HEAD     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
 
-    POST     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
-    PUT      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
-    PATCH    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
-    DELETE   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
+    POST     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    PUT      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    PATCH    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    DELETE   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
 }
 
-# HTTP server → Certbot + redirect
+# -------------------------------------------------------
+# Step 2: HTTP server → Certbot + redirect to HTTPS
+# -------------------------------------------------------
 server {
     listen 80;
     server_name {{ registry_domain }};
 
+    # Certbot validation challenge
     location /.well-known/acme-challenge/ {
         root /var/lib/letsencrypt;
     }
 
+    # Redirect all other HTTP traffic to HTTPS
     location / {
         return 301 https://$host$request_uri;
     }
 }
 
-# HTTPS server
+# -------------------------------------------------------
+# Step 3: HTTPS server
+# -------------------------------------------------------
 server {
     listen 443 ssl http2;
     server_name {{ registry_domain }};
 
+    # SSL certificate paths (from Let's Encrypt)
     ssl_certificate /etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ registry_domain }}/privkey.pem;
+
+    # Strong TLS settings
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
+    # Security headers
     add_header Strict-Transport-Security "max-age=63072000" always;
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "1; mode=block";
 
+    # Allow large uploads for Docker images
     client_max_body_size 5G;
 
-    # Nexus UI
+    # ---------------------------------------------------
+    # Nexus UI (main web interface)
+    # ---------------------------------------------------
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
@@ -58,7 +71,14 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Docker Registry /v2/
+    # ---------------------------------------------------
+    # Docker Registry endpoint
+    # ---------------------------------------------------
+    # Redirect /v2 → /v2/ to satisfy Docker client
+    location = /v2 {
+        return 301 /v2/;
+    }
+
     location /v2/ {
         proxy_pass $docker_upstream;
         proxy_set_header Host $host;
@@ -68,5 +88,6 @@ server {
 
         proxy_request_buffering off;
         proxy_buffering off;
+        chunked_transfer_encoding off;
     }
 }
