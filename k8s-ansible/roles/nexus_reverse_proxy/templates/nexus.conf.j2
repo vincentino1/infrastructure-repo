@@ -65,5 +65,8 @@ server {
         proxy_request_buffering off;
         proxy_buffering off;
         chunked_transfer_encoding on;
+
+        # Allow very large layers
+        client_max_body_size 10G;
     }
 }
