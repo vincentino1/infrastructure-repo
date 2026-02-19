@@ -1,57 +1,36 @@
-# nginx.conf.j2  --  Complete config for Nexus + Docker single-domain reverse proxy
+# /etc/nginx/sites-available/repo.vinny-dev.com.conf (or your template)
+# NGINX reverse proxy on separate server → Nexus on another server
 
-# Upstream definition (optional but cleaner)
-upstream nexus {
-    server {{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+# No upstream block needed if using map with full URL
+
+# Map to the BASE Nexus server URL (no trailing slash or path!)
+map $request_method $nexus_base_url {
+    default http://{{ nexus_server_ip_or_hostname }}:{{ nexus_port | default('8081') }};
 }
 
-# ────────────────────────────────────────────────
-# Map request method → correct upstream path prefix
-# ────────────────────────────────────────────────
-# GET/HEAD (pulls + manifest/layer fetches) → group repo (no prefix needed for group in most setups)
-# POST/PUT/PATCH/DELETE (pushes) → hosted repo
-map $request_method $docker_upstream {
-    GET    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
-    HEAD   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
-    default http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
-
-    POST   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    PUT    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    PATCH  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    DELETE http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-}
-
-# ────────────────────────────────────────────────
-# HTTP server → redirect everything to HTTPS + Certbot
-# ────────────────────────────────────────────────
 server {
     listen 80;
-    server_name {{ registry_domain }};
+    server_name {{ registry_domain | default('repo.vinny-dev.com') }};
 
-    # Certbot ACME challenge
+    # Certbot validation
     location /.well-known/acme-challenge/ {
         root /var/lib/letsencrypt;
         try_files $uri $uri/ =404;
     }
 
-    # Redirect all other HTTP → HTTPS
     location / {
         return 301 https://$host$request_uri;
     }
 }
 
-# ────────────────────────────────────────────────
-# Main HTTPS server
-# ────────────────────────────────────────────────
 server {
     listen 443 ssl http2;
-    server_name {{ registry_domain }};
+    server_name {{ registry_domain | default('repo.vinny-dev.com') }};
 
-    # Let's Encrypt certs
+    # SSL certificates (Let's Encrypt)
     ssl_certificate /etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ registry_domain }}/privkey.pem;
 
-    # Modern TLS settings
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
     ssl_ciphers HIGH:!aNULL:!MD5;
@@ -62,14 +41,14 @@ server {
     add_header X-Frame-Options DENY always;
     add_header X-XSS-Protection "1; mode=block" always;
 
-    # Allow huge Docker layers (adjust as needed)
+    # Docker images can be large
     client_max_body_size 10G;
 
     # ────────────────────────────────────────────────
-    # Nexus UI + API (everything except Docker v2)
+    # Proxy Nexus UI / REST API / everything except Docker v2
     # ────────────────────────────────────────────────
     location / {
-        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
+        proxy_pass http://{{ nexus_server_ip_or_hostname }}:{{ nexus_port | default('8081') }}/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -78,18 +57,20 @@ server {
         proxy_redirect off;
     }
 
-    # ────────────────────────────────────────────────
-    # Docker Registry v2 API
-    # ────────────────────────────────────────────────
-    # Redirect /v2 → /v2/ (some clients expect trailing slash)
+    # Docker Registry API – fix trailing slash
     location = /v2 {
         return 301 /v2/;
     }
 
     location /v2/ {
-        proxy_pass $docker_upstream;
+        proxy_pass $nexus_base_url;
 
-        # Required for Docker client compatibility
+        # PUSH (writes) → rewrite to hosted repo
+        # PULL (reads) → keep /v2/... path for group repo
+        if ($request_method ~ ^(POST|PUT|PATCH|DELETE)$) {
+            rewrite ^/v2/(.*)$ /repository/{{ docker_hosted_repo_name }}/$1 break;
+        }
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -97,21 +78,20 @@ server {
         proxy_set_header X-Forwarded-Port $server_port;
         proxy_set_header Connection "";
 
-        # Critical for large/chunked push/pull
         proxy_request_buffering off;
         proxy_buffering off;
-        chunked_transfer_encoding on;   # usually 'on' works better than 'off' for Docker
+        chunked_transfer_encoding on;
 
-        # Performance tweaks
-        proxy_read_timeout 300;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
+        proxy_read_timeout 600;
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
     }
 
-    # Optional: health / token endpoints if needed (rare)
-    location ~ ^/v2/(token$|_catalog$|_ping$) {
-        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
+    # Optional: allow direct access to _catalog / token / _ping without rewrite
+    location ~ ^/v2/(_catalog|_ping|token.*)$ {
+        proxy_pass http://{{ nexus_server_ip_or_hostname }}:{{ nexus_port | default('8081') }}/;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
     }
 }
