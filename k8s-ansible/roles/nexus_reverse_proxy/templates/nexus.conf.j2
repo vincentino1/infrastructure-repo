@@ -4,12 +4,33 @@ Who must use HTTPS
 How big uploads can be
 How Docker traffic is handled #}
 
-# HTTP-only temporary configuration for Certbot validation
+
+# -------------------------------------------------------
+# Nexus + Docker Registry NGINX configuration (single-domain)
+# -------------------------------------------------------
+
+# Step 1: Map HTTP methods to correct Docker upstream
+# GET/HEAD → docker group repo (pulls)
+# POST/PUT/PATCH/DELETE → docker hosted repo (pushes)
+map $request_method $docker_upstream {
+    default  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+    GET      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+    HEAD     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+
+    POST     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    PUT      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    PATCH    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    DELETE   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+}
+
+# -------------------------------------------------------
+# Step 2: HTTP server (Certbot + redirect to HTTPS)
+# -------------------------------------------------------
 server {
     listen 80;
     server_name {{ registry_domain }};
 
-    # Let Certbot validate HTTP challenge
+    # Certbot validation challenge
     location /.well-known/acme-challenge/ {
         root /var/lib/letsencrypt;
     }
@@ -20,50 +41,56 @@ server {
     }
 }
 
-
+# -------------------------------------------------------
+# Step 3: HTTPS server
+# -------------------------------------------------------
 server {
     listen 443 ssl http2;
     server_name {{ registry_domain }};
 
+    # SSL certificate paths
     ssl_certificate /etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ registry_domain }}/privkey.pem;
+
+    # Strong TLS settings
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
+    # Security headers
     add_header Strict-Transport-Security "max-age=63072000" always;
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "1; mode=block";
-    
-    # Allow large Docker uploads
+
+    # Allow large uploads for Docker images
     client_max_body_size 5G;
 
-    # Nexus UI
+    # ---------------------------------------------------
+    # Nexus UI (main web interface)
+    # ---------------------------------------------------
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Docker Registry
+    # ---------------------------------------------------
+    # Docker Registry endpoint
+    # ---------------------------------------------------
     location /v2/ {
-        # Pulls → group repo
-        limit_except POST PUT PATCH DELETE {
-            proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
-        }
+        proxy_pass $docker_upstream;
 
-        # Pushes → hosted repo
-        limit_except GET HEAD {
-            proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-        }
-
-        proxy_set_header Host $host;
+        # Required headers for Docker registry
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Required for Docker push/pull
         proxy_request_buffering off;
         proxy_buffering off;
+        chunked_transfer_encoding off;
     }
 }
