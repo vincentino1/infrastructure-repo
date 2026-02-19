@@ -1,0 +1,60 @@
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+
+- name: Remove default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload NGINX
+
+- name: Create NGINX configuration file for Nexus
+  ansible.builtin.template:
+    src: nexus-nginx.conf.j2
+    dest: /etc/nginx/sites-available/nexus.conf
+    mode: '0644'
+  notify: Reload NGINX
+
+- name: Enable NGINX site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/nexus.conf
+    dest: /etc/nginx/sites-enabled/nexus.conf
+    state: link
+    force: yes
+  notify: Reload NGINX
+
+- name: Test NGINX configuration
+  ansible.builtin.command: nginx -t
+  register: nginx_test
+  changed_when: false
+  failed_when: nginx_test.rc != 0
+
+- name: Ensure NGINX is started and enabled
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Obtain Let's Encrypt certificate
+  ansible.builtin.command: >
+    certbot --nginx
+    --non-interactive
+    --agree-tos
+    --expand
+    --mail {{ letsencrypt_email }}
+    -d {{ registry_domain }}
+    {% if enable_docker_subdomain %}
+    -d {{ docker_registry_domain }}
+    {% endif %}
+  args:
+    creates: "/etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem"
+
+- name: Enable Certbot auto-renew
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: yes

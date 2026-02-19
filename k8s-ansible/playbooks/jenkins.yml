@@ -2,7 +2,7 @@
   hosts: jenkins_server
   become: yes
   roles:
-    - jenkins
+    - jenkins_setup
 
 
 

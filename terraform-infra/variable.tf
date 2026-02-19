@@ -143,7 +143,7 @@ variable "ssh_key_name" {
 
 variable "jenkins_volume_size" {
   type        = number
-  default     = 30
+  default     = 50
   description = "Root volume size in GB"
   
 }
@@ -156,7 +156,7 @@ variable "nexus_volume_size" {
 
 variable "proxy_volume_size" {
     type        = number
-    default     = 10
+    default     = 8
     description = "Root volume size in GB"
 }
 

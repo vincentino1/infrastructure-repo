@@ -2,4 +2,4 @@
   hosts: proxy_server
   become: yes
   roles:
-    - setup-nginx-ssl # ssl termination with nginx reverse proxy
+    - nexus_reverse_proxy # ssl termination with nginx reverse proxy

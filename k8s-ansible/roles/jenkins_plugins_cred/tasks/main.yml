@@ -1,3 +1,24 @@
+---
+- name: Ensure Jenkins is started
+  ansible.builtin.systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Wait for Jenkins to be reachable
+  ansible.builtin.uri:
+    url: "{{ jenkins_url }}"
+    status_code: [200, 403]
+    timeout: 5
+  register: jenkins_status
+  retries: 60
+  delay: 5
+  until: "'status' in jenkins_status and jenkins_status.status in [200, 403]"
+
+- name: Display Jenkins service status
+  debug:
+    msg: "Jenkins is up with status code {{ jenkins_status.status }}"
+
 - name: Install Jenkins plugins
   community.general.jenkins_plugin:
     name: "{{ item }}"
@@ -9,8 +30,8 @@
   loop: "{{ jenkins_plugins }}"
   notify: Restart Jenkins
 
-- name: Ensure Jenkins init.groovy.d directory exists
-  file:
+- name: Ensure init.groovy.d directory exists
+  ansible.builtin.file:
     path: /var/lib/jenkins/init.groovy.d
     state: directory
     owner: jenkins
@@ -18,7 +39,7 @@
     mode: '0755'
 
 - name: Deploy credentials Groovy init script
-  template:
+  ansible.builtin.template:
     src: credentials.groovy.j2
     dest: /var/lib/jenkins/init.groovy.d/jenkins_creds.groovy
     owner: jenkins
@@ -26,16 +47,28 @@
     mode: '0644'
   notify: Restart Jenkins
 
-- name: Wait for Jenkins to start up
+- name: Set Jenkins global environment variables
+  ansible.builtin.lineinfile:
+    path: /etc/default/jenkins
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+    create: yes
+    backup: yes
+  loop:
+    - { key: 'NEXUS_URL', value: '{{ nexus_url }}' }
+    - { key: 'DOCKER_REGISTRY_URL', value: '{{ docker_registry_url }}' }
+  notify: Restart Jenkins
+
+- name: Wait for Jenkins to be ready after restart
   ansible.builtin.uri:
     url: "{{ jenkins_url }}"
-    status_code: 
-      - 200
-      - 403
+    status_code: [200, 403]
     timeout: 5
-  register: jenkins_service_status
+  register: jenkins_status_after
   retries: 60
   delay: 5
-  until: >
-    'status' in jenkins_service_status and
-    jenkins_service_status.status in [200, 403]
+  until: "'status' in jenkins_status_after and jenkins_status_after.status in [200, 403]"
+
+- name: Display Jenkins service status after restart
+  debug:
+    msg: "Jenkins is up after restart with status code {{ jenkins_status_after.status }}"

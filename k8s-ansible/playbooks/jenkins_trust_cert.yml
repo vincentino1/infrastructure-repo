@@ -1,5 +1,0 @@
-- name: Trust Nexus registry cert on Jenkins Docker client
-  hosts: jenkins_server
-  become: yes
-  roles:
-    - jenkins_trust_cert
