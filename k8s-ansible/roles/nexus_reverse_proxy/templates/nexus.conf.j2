@@ -13,14 +13,14 @@ How Docker traffic is handled #}
 # GET/HEAD → docker group repo (pulls)
 # POST/PUT/PATCH/DELETE → docker hosted repo (pushes)
 map $request_method $docker_upstream {
-    default  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
-    GET      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
-    HEAD     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }}/;
+    default  http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
+    GET      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
+    HEAD     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_group_repo }};
 
-    POST     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    PUT      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    PATCH    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
-    DELETE   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }}/;
+    POST     http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
+    PUT      http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
+    PATCH    http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
+    DELETE   http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/repository/{{ docker_hosted_repo }};
 }
 
 # -------------------------------------------------------
