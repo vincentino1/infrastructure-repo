@@ -1,13 +1,7 @@
-{# NGINX sits in front of Nexus and decides:
-Who goes where
-Who must use HTTPS
-How big uploads can be
-How Docker traffic is handled #}
-
 # Redirect HTTP → HTTPS
 server {
     listen 80;
-    server_name {{ registry_domain }} {% if enable_docker_subdomain %}{{ docker_registry_domain }}{% endif %};
+    server_name {{ registry_domain }}{% if enable_docker_subdomain %} {{ docker_registry_domain }}{% endif %};
     return 301 https://$host$request_uri;
 }
 

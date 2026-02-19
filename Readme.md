@@ -96,25 +96,25 @@ ansible-playbook -i inventory/hosts.ini playbooks/cluster.yml
 ```bash
 ansible-playbook -i inventory/hosts.ini playbooks/db.yml
 
-ansible-playbook -i inventory/hosts.ini playbooks/nexus.yml
+ansible-playbook -i inventory/hosts.ini playbooks/nexus.yml --ask-vault-pass
 
 ansible-playbook -i inventory/hosts.ini playbooks/nexus_repo_config.yml --ask-vault-pass
 
-ansible-playbook -i inventory/hosts.ini playbooks/proxy.yml
+ansible-playbook -i inventory/hosts.ini playbooks/proxy.yml --ask-vault-pass
 ```
 
 ### Setup Jenkins Server 
 ```bash
-ansible-playbook -i inventory/hosts.ini playbooks/jenkins.yml
+ansible-playbook -i inventory/hosts.ini playbooks/jenkins.yml --ask-vault-pass
 ```
 ### Install plugins in Jenkins 
 
 ### Run this to encrypt the vaults
 ```bash
 cd k8s-ansible
-ansible-vault encrypt group_vars/jenkins/vault.yml
-ansible-vault view group_vars/jenkins/vault.yml
-ansible-vault edit group_vars/jenkins/vault.yml
+ansible-vault encrypt inventory/group_vars/all/vault.yml
+ansible-vault view inventory/group_vars/all/vault.yml
+ansible-vault edit inventory/group_vars/all/vault.yml
 ```
 
 ### NOTE: Make sure to login with Jenkins Initial password and create username and Password for authentication before running this command otherwise you will get Error **"HTTP Error 401: Unauthorized"**.
@@ -139,7 +139,4 @@ After setting up the proxy server for SSL termination, you need to configure the
    - Since we are using **Path-based routing**, go into each Docker repository created in Nexus.
    - Make sure to select **Path-based routing** for each repo, then save the changes.
 
-3. **Run Ansible Playbook to Trust Certificate**
-   
-```bash
-   ansible-playbook -i inventory/hosts.ini playbooks/jenkins_trust_cert.yml --ask-vault-pass
+

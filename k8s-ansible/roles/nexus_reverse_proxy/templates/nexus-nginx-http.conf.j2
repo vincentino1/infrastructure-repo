@@ -1,0 +1,21 @@
+{# NGINX sits in front of Nexus and decides:
+Who goes where
+Who must use HTTPS
+How big uploads can be
+How Docker traffic is handled #}
+
+# HTTP-only temporary configuration for initial Certbot validation
+
+server {
+    listen 80;
+    server_name {{ registry_domain }}{% if enable_docker_subdomain %} {{ docker_registry_domain }}{% endif %};
+
+    # Serve Nexus over HTTP temporarily
+    location / {
+        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
