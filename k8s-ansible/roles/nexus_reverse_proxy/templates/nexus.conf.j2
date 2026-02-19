@@ -1,12 +1,6 @@
-# NGINX config – path-based single-domain Docker with Nexus
-# - Requests to /v2/myapp-docker-hosted/... → proxy to hosted repo
-# - All other /v2/... → proxy to group repo (for pulls)
-# No rewrites → no "Not a docker request" or URI errors
-
-map $request_uri $docker_repo_path {
-    ~^/v2/{{ docker_hosted_repo }}(/.*)?$   /repository/{{ docker_hosted_repo }}$1;
-    default                                  /repository/{{ docker_group_repo }}$1;
-}
+# NGINX config - simplified for Nexus 3.59+ style single-domain Docker
+# proxy_pass to Nexus root + $request_uri (no /repository/... prefix)
+# Nexus routes based on the repo name in the image path (/myapp-docker-hosted/ vs /myapp-docker-group/)
 
 server {
     listen 80;
@@ -40,6 +34,7 @@ server {
 
     client_max_body_size 10G;
 
+    # Nexus UI + non-Docker API
     location / {
         proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}/;
         proxy_set_header Host $host;
@@ -50,12 +45,13 @@ server {
         proxy_redirect off;
     }
 
+    # Docker v2 API
     location = /v2 {
         return 301 /v2/;
     }
 
     location /v2/ {
-        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}$docker_repo_path;
+        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}$request_uri;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
