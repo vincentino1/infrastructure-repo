@@ -1,7 +1,11 @@
-# Safe NGINX config – no URI in proxy_pass variable / no regex locations
+# NGINX config – path-based single-domain Docker with Nexus
+# - Requests to /v2/myapp-docker-hosted/... → proxy to hosted repo
+# - All other /v2/... → proxy to group repo (for pulls)
+# No rewrites → no "Not a docker request" or URI errors
 
-map $request_method $nexus_base {
-    default http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }};
+map $request_uri $docker_repo_path {
+    ~^/v2/{{ docker_hosted_repo }}(/.*)?$   /repository/{{ docker_hosted_repo }}$1;
+    default                                  /repository/{{ docker_group_repo }}$1;
 }
 
 server {
@@ -51,11 +55,7 @@ server {
     }
 
     location /v2/ {
-        proxy_pass $nexus_base;  # NO trailing / here – critical
-
-        if ($request_method ~ ^(POST|PUT|PATCH|DELETE)$) {
-            rewrite ^/v2/(.*)$ /repository/{{ docker_hosted_repo }}/$1 break;
-        }
+        proxy_pass http://{{ nexus_upstream_host }}:{{ nexus_upstream_port }}$docker_repo_path;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -73,7 +73,6 @@ server {
         proxy_send_timeout 600;
     }
 }
-
 
 
 
