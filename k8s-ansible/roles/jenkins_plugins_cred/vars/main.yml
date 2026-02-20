@@ -1,5 +1,5 @@
 jenkins_home: /var/lib/jenkins
-jenkins_url: http://10.0.11.121:8080
+jenkins_url: http://10.0.11.186:8080
 jenkins_admin_user: admin
 jenkins_admin_password: "{{ vault_jenkins_admin_password }}"
 nexus_url: repo.vinny-dev.com
