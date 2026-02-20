@@ -4,7 +4,6 @@
       - "User: {{ nexus_admin_user }}"
       - "Pass length: {{ nexus_admin_pass | length }}"
 
-
 # Maven Repositories
 - name: Check if myapp-maven-hosted exists
   ansible.builtin.uri:

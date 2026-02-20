@@ -27,7 +27,7 @@
 # 3. Deploy HTTP-only config
 - name: Deploy initial HTTP-only NGINX config 
   ansible.builtin.template: 
-    src: nexus.conf.j2
+    src: nexus-http.conf.j2
     dest: /etc/nginx/sites-available/nexus.conf 
     mode: "0644" 
   notify: Reload NGINX
@@ -65,7 +65,23 @@
   args:
     creates: "/etc/letsencrypt/live/{{ registry_domain }}/fullchain.pem"
 
-# 7. Enable auto-renewal of certificates
+
+# 6. Deploy full HTTPS config (your original config)
+- name: Deploy full HTTPS NGINX config
+  ansible.builtin.template:
+    src: nexus-https.conf.j2
+    dest: /etc/nginx/sites-available/nexus.conf
+    mode: "0644"
+  notify: Reload NGINX
+
+# 7. Validate NGINX configuration again
+- name: Test NGINX configuration after SSL update
+  ansible.builtin.command: nginx -t
+  register: nginx_test_ssl
+  changed_when: false
+  failed_when: nginx_test_ssl.rc != 0
+
+# 8. Enable auto-renewal of certificates
 - name: Enable Certbot auto-renew
   ansible.builtin.systemd:
     name: certbot.timer
