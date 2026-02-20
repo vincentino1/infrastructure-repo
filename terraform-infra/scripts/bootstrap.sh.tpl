@@ -20,6 +20,24 @@ echo "Ansible installation complete." >> "$LOG"
 which ansible >> "$LOG" 2>&1
 ansible --version >> "$LOG" 2>&1
 ansible --version >> "$LOG" 2>&1 
+
+
+# this ensures we have the correct version of the community.general collection, 
+# which is required for some of our playbooks. 
+# The version that comes with ansible-core 2.15 is too old and causes errors. 
+# We need at least 12.3.0, which is compatible with ansible-core 2.15.
+
+echo "Fixing community.general collection version..." >> "$LOG"
+
+# Remove any old versions
+rm -rf ~/.ansible/collections/ansible_collections/community/general >> "$LOG" 2>&1
+
+# Install exactly 12.3.0
+ansible-galaxy collection install community.general:12.3.0 --force >> "$LOG" 2>&1
+
+# Verify
+ansible-galaxy collection list | grep community.general >> "$LOG" 2>&1
+
 fi
 
  

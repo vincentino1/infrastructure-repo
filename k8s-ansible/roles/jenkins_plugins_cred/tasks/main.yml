@@ -38,13 +38,13 @@
   loop: "{{ jenkins_plugins }}"
   notify: Restart Jenkins
 
-# - name: Ensure init.groovy.d directory exists
-#   ansible.builtin.file:
-#     path: /var/lib/jenkins/init.groovy.d
-#     state: directory
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0755'
+- name: Ensure init.groovy.d directory exists
+  ansible.builtin.file:
+    path: /var/lib/jenkins/init.groovy.d
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0755'
 
 # - name: Deploy credentials Groovy init script
 #   ansible.builtin.template:
@@ -61,52 +61,52 @@
 #     state: directory
 #     mode: '0755'
 
-# - name: Ensure community.general collection is installed
-#   ansible.builtin.command: ansible-galaxy collection install community.general
-#   changed_when: false
-#   check_mode: no
+- name: Ensure community.general collection is installed
+  ansible.builtin.command: ansible-galaxy collection install community.general
+  changed_when: false
+  check_mode: no
 
-# - name: Generate long-lived API token (only needs to run once)
-#   community.general.jenkins_credential:
-#     url: "{{ jenkins_url }}"
-#     jenkins_user: "{{ jenkins_admin_user }}"
-#     jenkins_password: "{{ jenkins_admin_password }}"
-#     type: token
-#     name: "ansible-automation-token"
-#     state: present
-#   register: token_result
-#   no_log: true   # hide token in logs   
-#   when: not lookup('env', 'JENKINS_API_TOKEN')   # skip if token already in env
+- name: Generate long-lived API token (only needs to run once)
+  community.general.jenkins_credential:
+    url: "{{ jenkins_url }}"
+    jenkins_user: "{{ jenkins_admin_user }}"
+    jenkins_password: "{{ jenkins_admin_password }}"
+    type: token
+    name: "ansible-automation-token"
+    state: present
+  register: token_result
+  no_log: true   # hide token in logs   
+  when: not lookup('env', 'JENKINS_API_TOKEN')   # skip if token already in env
 
-# - name: Show generated token (run once, then remove or mask!)
-#   ansible.builtin.debug:
-#     msg: "Token generated: {{ token_result.token | default('already exists') }}"
-#   when: token_result.changed
+- name: Show generated token (run once, then remove or mask!)
+  ansible.builtin.debug:
+    msg: "Token generated: {{ token_result.token | default('already exists') }}"
+  when: token_result.changed
 
-# - name: Create username/password credential using token
-#   community.general.jenkins_credential:
-#     url: "{{ jenkins_url }}"
-#     token: "{{ token_result.token | default(lookup('env', 'JENKINS_API_TOKEN')) }}"  # fallback for future runs
-#     id: "my-deploy-cred"
-#     type: user_and_pass
-#     description: "Deploy user for app"
-#     username: "deployer"
-#     password: "secret123"
-#     state: present
-#   register: cred_result
+- name: Create username/password credential using token
+  community.general.jenkins_credential:
+    url: "{{ jenkins_url }}"
+    token: "{{ token_result.token | default(lookup('env', 'JENKINS_API_TOKEN')) }}"  # fallback for future runs
+    id: "my-deploy-cred"
+    type: user_and_pass
+    description: "Deploy user for app"
+    username: "deployer"
+    password: "secret123"
+    state: present
+  register: cred_result
 
-# - name: Debug credential creation result
-#   ansible.builtin.debug:
-#     msg: |
-#       Changed:   {{ cred_result.changed }}
-#       Failed:    {{ cred_result.failed | default(false) }}
-#       Details:   {{ cred_result.details | default('none') }}
-#       Message:   {{ cred_result.msg | default('success') }}
+- name: Debug credential creation result
+  ansible.builtin.debug:
+    msg: |
+      Changed:   {{ cred_result.changed }}
+      Failed:    {{ cred_result.failed | default(false) }}
+      Details:   {{ cred_result.details | default('none') }}
+      Message:   {{ cred_result.msg | default('success') }}
 
-# - name: Fail if credential creation failed
-#   ansible.builtin.fail:
-#     msg: "Credential creation failed: {{ cred_result.details | default('unknown error') }}"
-#   when: cred_result.failed
+- name: Fail if credential creation failed
+  ansible.builtin.fail:
+    msg: "Credential creation failed: {{ cred_result.details | default('unknown error') }}"
+  when: cred_result.failed
 
 
 - name: Create Groovy init script for global env vars
