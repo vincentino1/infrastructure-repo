@@ -53,6 +53,9 @@
     state: started
     enabled: yes
 
+- name: Force NGINX reload before Certbot 
+  ansible.builtin.meta: flush_handlers
+
 # 5. Obtain Let's Encrypt certificate and update NGINX config
 - name: Obtain Let's Encrypt certificate
   ansible.builtin.command: >
