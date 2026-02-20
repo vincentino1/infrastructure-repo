@@ -133,7 +133,7 @@ After setting up the proxy server for SSL termination, you need to configure the
    - Log in to the Nexus UI.
    - Go to `System` → `Capabilities`.
    - Create a new capability to set the Nexus base URL.
-   - Make sure the jenkins user has nx-repository-view-maven2-*-add and edit permissions for that repository.
+   - Make sure the jenkins user has nx-repository-view-maven2-*-add and edit , nx-repository-view-pypi-*-read and edit permissions for that repository.
 
 2. **Configure Docker Repositories**
    - Since we are using **Path-based routing**, go into each Docker repository created in Nexus.
