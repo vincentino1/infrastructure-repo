@@ -1,4 +1,12 @@
 ---
+
+- name: Ensure community.general collection is installed on control node
+  ansible.builtin.command: ansible-galaxy collection install community.general --force
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+  check_mode: no
+
 - name: Ensure Jenkins is started
   ansible.builtin.systemd:
     name: jenkins
@@ -68,6 +76,7 @@
     state: present
   register: token_result
   no_log: true   # hide token in logs   
+  when: not lookup('env', 'JENKINS_API_TOKEN')   # skip if token already in env
 
 - name: Show generated token (run once, then remove or mask!)
   ansible.builtin.debug:
@@ -84,7 +93,6 @@
     username: "deployer"
     password: "secret123"
     state: present
-    force: true
   register: cred_result
 
 - name: Debug credential creation result
