@@ -38,28 +38,28 @@
   loop: "{{ jenkins_plugins }}"
   notify: Restart Jenkins
 
-# - name: Ensure init.groovy.d directory exists
-#   ansible.builtin.file:
-#     path: /var/lib/jenkins/init.groovy.d
-#     state: directory
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0755'
+- name: Ensure init.groovy.d directory exists
+  ansible.builtin.file:
+    path: /var/lib/jenkins/init.groovy.d
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0755'
 
-# - name: Deploy credentials Groovy init script
-#   ansible.builtin.template:
-#     src: credentials.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/jenkins_creds.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins
+- name: Deploy credentials Groovy init script
+  ansible.builtin.template:
+    src: credentials.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/jenkins_creds.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  notify: Restart Jenkins
 
-# - name: Create systemd override directory for Jenkins
-#   ansible.builtin.file:
-#     path: /etc/systemd/system/jenkins.service.d
-#     state: directory
-#     mode: '0755'
+- name: Create systemd override directory for Jenkins
+  ansible.builtin.file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
 
 # - name: Ensure community.general collection is installed
 #   ansible.builtin.command: ansible-galaxy collection install community.general
