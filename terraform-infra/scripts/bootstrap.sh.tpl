@@ -6,6 +6,24 @@ hostnamectl set-hostname ${hostname}
 LOG="/var/log/bootstrap.log" 
 echo "Bootstrapping ${role}: ${hostname}" > "$LOG" 
 
+############################################
+# JENKINS SERVER SETUP
+############################################
+if [ "${role}" = "jenkins-server" ]; then
+    echo "Running jenkins-server setup..." >> "$LOG"
+
+    echo "Installing Python3 + pip for Jenkins..." >> "$LOG"
+    apt install -y python3 python3-pip >> "$LOG" 2>&1
+
+    echo "Verifying Python installation..." >> "$LOG"
+    python3 --version >> "$LOG" 2>&1
+    pip3 --version >> "$LOG" 2>&1
+fi
+
+############################################
+# BASTION HOST SETUP
+############################################
+
 if [ "${role}" = "bastion-host" ]; then 
 echo "Running bastion-host setup..." >> "$LOG" 
 
