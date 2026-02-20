@@ -54,7 +54,7 @@
 #     mode: '0755'
 
 - name: Ensure community.general collection is installed
-  ansible.builtin.command: ansible-galaxy collection install community.general --upgrade --force
+  ansible.builtin.command: ansible-galaxy collection install community.general
   changed_when: false
   check_mode: no
 
