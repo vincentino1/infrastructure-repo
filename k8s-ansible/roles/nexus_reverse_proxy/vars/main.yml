@@ -1,5 +1,5 @@
 registry_domain: repo.vinny-dev.com
-nexus_upstream_host: 10.0.10.152
+nexus_upstream_host: 10.0.10.12
 nexus_upstream_port: 8081
 docker_group_repo: myapp-docker-group
 docker_hosted_repo: myapp-docker-hosted
