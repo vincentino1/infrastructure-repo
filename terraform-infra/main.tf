@@ -422,8 +422,8 @@ module "bastion_sg" {
 #   }
 # root_block_device = {
 #     encrypted   = true
-#     volume_type = "gp3"
-#     volume_size = var.master_volume_size
+#     type = "gp3"
+#     size = var.master_volume_size
 #   }
 
 #   tags = merge(
@@ -457,8 +457,8 @@ module "bastion_sg" {
 #   }
 #   root_block_device = {
 #     encrypted   = true
-#     volume_type = "gp3"
-#     volume_size = var.worker_volume_size
+#     type = "gp3"
+#     size = var.worker_volume_size
 #     }
 
 #   tags = merge(
@@ -489,8 +489,8 @@ module "jenkins-server" {
   }
   root_block_device = {
     encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.jenkins_volume_size
+    type = "gp3"
+    size = var.jenkins_volume_size
   }
 
   tags = merge(
@@ -521,8 +521,8 @@ module "nexus-server" {
   }
   root_block_device = {
     encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.nexus_volume_size
+    type = "gp3"
+    size = var.nexus_volume_size
   }
   tags = merge(
     var.tags,
@@ -552,8 +552,8 @@ module "proxy-server" {
   }
   root_block_device = {
     encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.proxy_volume_size
+    type = "gp3"
+    size = var.proxy_volume_size
   }
   tags = merge(
     var.tags,
@@ -583,8 +583,8 @@ module "bastion-host" {
   }
   root_block_device = {
     encrypted   = true
-    volume_type = "gp3"
-    volume_size = var.bastion_volume_size
+    type = "gp3"
+    size = var.bastion_volume_size
   }
 
   tags = merge(
@@ -616,8 +616,8 @@ module "bastion-host" {
 
 #   root_block_device = {
 #       encrypted   = true
-#       volume_size = var.db_volume_size
-#       volume_type = "gp3"
+#       size = var.db_volume_size
+#       type = "gp3"
 #     }
 
 #   tags = merge(var.tags, {

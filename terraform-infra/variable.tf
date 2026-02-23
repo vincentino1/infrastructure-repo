@@ -143,14 +143,14 @@ variable "ssh_key_name" {
 
 variable "jenkins_volume_size" {
   type        = number
-  default     = 50
+  default     = 20
   description = "Root volume size in GB"
   
 }
 
 variable "nexus_volume_size" {
   type        = number
-  default     = 50
+  default     = 10
   description = "Root volume size in GB"
 }
 
@@ -163,7 +163,7 @@ variable "proxy_volume_size" {
 # variable "db_volume_size" {
 #   type        = number
 #   description = "Root volume size in GB"
-#   default     = 50
+#   default     = 20
 # }
 
 variable "bastion_volume_size" {
