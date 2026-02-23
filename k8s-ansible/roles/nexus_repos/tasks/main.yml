@@ -1,7 +1,7 @@
 ---
 - name: Wait for Nexus API to be ready (authenticated)
   ansible.builtin.uri:
-    url: "{{ nexus_api_url }}/status"
+    url: "{{ nexus_api_url }}/service/rest/v1/status"
     method: GET
     user: "{{ nexus_admin_user }}"
     password: "{{ nexus_admin_pass }}"
